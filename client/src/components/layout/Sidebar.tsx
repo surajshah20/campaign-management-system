@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ShieldCheck,
+  CheckCheck,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../context/AuthContext';
@@ -32,6 +33,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
     { label: 'Campaigns', href: '/campaigns', icon: Megaphone },
     { label: 'Content Calendar', href: '/content', icon: CalendarDays },
     { label: 'Tasks', href: '/tasks', icon: CheckSquare },
+    { label: 'Client Approvals', href: '/portal', icon: CheckCheck },
     { label: 'Advertising', href: '/advertising', icon: BarChart3 },
     { label: 'Analytics', href: '/analytics', icon: LineChart },
     { label: 'Reports', href: '/reports', icon: FileSpreadsheet },

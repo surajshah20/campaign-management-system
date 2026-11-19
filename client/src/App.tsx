@@ -9,15 +9,13 @@ import { ClientsPage } from './features/clients/ClientsPage';
 import { ClientDetailPage } from './features/clients/ClientDetailPage';
 import { TeamPage } from './features/team/TeamPage';
 import { SettingsPage } from './features/settings/SettingsPage';
+import { CampaignsPage } from './features/campaigns/CampaignsPage';
+import { CampaignDetailPage } from './features/campaigns/CampaignDetailPage';
+import { TasksPage } from './features/tasks/TasksPage';
+import { ContentCalendarPage } from './features/content/ContentCalendarPage';
+import { ClientPortalPage } from './features/approvals/ClientPortalPage';
 import { FeaturePlaceholder } from './features/placeholder/FeaturePlaceholder';
-import {
-  Megaphone,
-  CalendarDays,
-  CheckSquare,
-  BarChart3,
-  LineChart,
-  FileSpreadsheet,
-} from 'lucide-react';
+import { BarChart3, LineChart, FileSpreadsheet } from 'lucide-react';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isLoading } = useAuth();
@@ -60,51 +58,23 @@ export const App: React.FC = () => {
               </ProtectedRoute>
             }
           >
+            {/* Phase 1 & 2 */}
             <Route index element={<OverviewPage />} />
-            
-            {/* Phase 2: Agency Operations & CRM */}
             <Route path="clients" element={<ClientsPage />} />
             <Route path="clients/:id" element={<ClientDetailPage />} />
             <Route path="team" element={<TeamPage />} />
             <Route path="settings" element={<SettingsPage />} />
 
-            {/* Upcoming Roadmap Phases */}
-            <Route
-              path="campaigns"
-              element={
-                <FeaturePlaceholder
-                  title="Campaign Management"
-                  moduleName="Module 4"
-                  targetPhase="Phase 3"
-                  description="Multi-platform campaign orchestration across Facebook, Instagram, TikTok, and Meta Ads with lifecycle management."
-                  icon={Megaphone}
-                />
-              }
-            />
-            <Route
-              path="content"
-              element={
-                <FeaturePlaceholder
-                  title="Content Studio & Social Calendar"
-                  moduleName="Module 6"
-                  targetPhase="Phase 4"
-                  description="Interactive monthly/weekly content calendar, multi-version creative editor, caption drafting, and automated approval pipeline."
-                  icon={CalendarDays}
-                />
-              }
-            />
-            <Route
-              path="tasks"
-              element={
-                <FeaturePlaceholder
-                  title="Task Management"
-                  moduleName="Module 5"
-                  targetPhase="Phase 3"
-                  description="Task tracking across Kanban boards, lists, and calendar deadlines linked directly to campaigns and clients."
-                  icon={CheckSquare}
-                />
-              }
-            />
+            {/* Phase 3: Campaign Operations & Task Management */}
+            <Route path="campaigns" element={<CampaignsPage />} />
+            <Route path="campaigns/:id" element={<CampaignDetailPage />} />
+            <Route path="tasks" element={<TasksPage />} />
+
+            {/* Phase 4: Content Studio, Calendar & Client Portal */}
+            <Route path="content" element={<ContentCalendarPage />} />
+            <Route path="portal" element={<ClientPortalPage />} />
+
+            {/* Upcoming Roadmap Phases 5 & 6 */}
             <Route
               path="advertising"
               element={

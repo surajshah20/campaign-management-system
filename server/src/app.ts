@@ -9,6 +9,10 @@ import workspaceRoutes from './routes/workspace.routes';
 import clientRoutes from './routes/client.routes';
 import teamRoutes from './routes/team.routes';
 import activityRoutes from './routes/activity.routes';
+import campaignRoutes from './routes/campaign.routes';
+import taskRoutes from './routes/task.routes';
+import contentRoutes from './routes/content.routes';
+import portalRoutes from './routes/portal.routes';
 
 export const app = express();
 
@@ -47,6 +51,10 @@ app.use('/api/v1/workspaces', workspaceRoutes);
 app.use('/api/v1/clients', clientRoutes);
 app.use('/api/v1/team', teamRoutes);
 app.use('/api/v1/activities', activityRoutes);
+app.use('/api/v1/campaigns', campaignRoutes);
+app.use('/api/v1/tasks', taskRoutes);
+app.use('/api/v1/content', contentRoutes);
+app.use('/api/v1/portal', portalRoutes);
 
 // Global Error Handler
 app.use(errorHandler);

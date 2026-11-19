@@ -56,7 +56,7 @@ export class ClientController {
     try {
       const client = await ClientService.getClientById(
         req.tenant!.agencyId,
-        req.params.id
+        req.params.id as string
       );
       return res.status(200).json({
         success: true,
@@ -87,7 +87,7 @@ export class ClientController {
     try {
       const client = await ClientService.updateClient(
         req.tenant!.agencyId,
-        req.params.id,
+        req.params.id as string,
         req.user!.id,
         req.body
       );
@@ -104,7 +104,7 @@ export class ClientController {
     try {
       await ClientService.deleteClient(
         req.tenant!.agencyId,
-        req.params.id,
+        req.params.id as string,
         req.user!.id
       );
       return res.status(200).json({

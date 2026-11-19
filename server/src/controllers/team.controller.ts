@@ -78,7 +78,7 @@ export class TeamController {
     try {
       await TeamService.cancelInvitation(
         req.tenant!.agencyId,
-        req.params.id,
+        req.params.id as string,
         req.user!.id
       );
       return res.status(200).json({
@@ -94,7 +94,7 @@ export class TeamController {
     try {
       const updated = await TeamService.updateMemberRole(
         req.tenant!.agencyId,
-        req.params.id,
+        req.params.id as string,
         req.body.role,
         req.user!.id
       );
@@ -111,7 +111,7 @@ export class TeamController {
     try {
       await TeamService.removeMember(
         req.tenant!.agencyId,
-        req.params.id,
+        req.params.id as string,
         req.user!.id
       );
       return res.status(200).json({
