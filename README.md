@@ -100,6 +100,22 @@ Granular, backend-enforced permissions across 7 distinct personas:
   * **Request Changes**: Records specific feedback and prompts the creative team for Version `N+1`.
   * **Review History**: Audit trail with timestamps and feedback notes.
 
+### 8. Paid Advertising Management & Batch CSV Ingestion
+* Comprehensive paid media tracking across **Meta Ads**, **Google Ads**, **TikTok Ads**, and **LinkedIn Ads**.
+* Connect ad accounts with currency alignment and external account IDs.
+* Track ad campaigns with allocated budget, real-time spend utilization, and status filters.
+* **Dual Ingestion Engine**:
+  * Daily manual metric logging with instant derived ROAS calculation.
+  * Batch CSV ingestion (`date,impressions,reach,clicks,spend,conversions,revenue`) for offline exports from Ads Manager.
+
+### 9. Advertising & Campaign Analytics
+* Real-time executive performance dashboard powered by **Recharts**:
+  * **Financial Trajectory**: Daily Revenue vs. Media Spend area chart with gradient fills.
+  * **Volume Breakdown**: Daily Impressions vs. Link Clicks bar chart.
+  * **Channel Efficiency Matrix**: Comparative table breaking down Spend, Revenue, CTR, CPA, and ROAS across Meta, Google, and TikTok.
+* Dynamic time windows: Last 7 Days, Last 14 Days, Last 30 Days, Last 90 Days.
+* Cross-campaign and platform filter dropdowns.
+
 ---
 
 ## Technology Stack
@@ -152,6 +168,8 @@ campaign_management_system/
     │       ├── tasks/           # TasksPage (Kanban & List views)
     │       ├── content/         # ContentCalendarPage
     │       ├── approvals/       # ClientPortalPage
+    │       ├── advertising/     # AdvertisingPage (Paid media management & CSV import)
+    │       ├── analytics/       # AnalyticsPage (Cross-platform performance charts)
     │       ├── team/            # TeamPage (Members & Invitations)
     │       └── settings/        # SettingsPage (Workspace configuration)
     └── tailwind.config.js       # Design system tokens & Inter font
@@ -244,9 +262,12 @@ npx tsx test/operations.test.ts
 
 # Run Campaign, Kanban Task & Version Approval Tests
 npx tsx test/campaigns-content.test.ts
+
+# Run Paid Advertising & Analytics Tests
+npx tsx test/advertising-analytics.test.ts
 ```
 
-All 17 integration tests pass with zero warnings.
+All 22 integration tests pass with zero warnings.
 
 ---
 
@@ -265,7 +286,7 @@ All 17 integration tests pass with zero warnings.
 - [x] **Phase 2: Agency Operations** (Client CRM, Dedicated Client Workspaces, Team Invitations, Audit Stream)
 - [x] **Phase 3: Campaign Operations** (Campaign wizard, Multi-platform lifecycle, Interactive 5-Column Kanban Board)
 - [x] **Phase 4: Content Studio & Approvals** (Social calendar, Immutable version iterations, Restricted Client Portal)
-- [ ] **Phase 5: Paid Advertising & Analytics** (Meta & Google Ad performance ingestion, ROAS trends, Conversion charts)
+- [x] **Phase 5: Paid Advertising & Analytics** (Meta & Google Ad performance ingestion, ROAS trends, Conversion charts)
 - [ ] **Phase 6: Client Reports** (PDF report generation & public share links)
 - [ ] **Phase 7: Third-Party Integrations** (Meta Marketing API, Google Ads API, S3/Cloudinary media storage)
 - [ ] **Phase 8: Commercial SaaS** (Subscription billing & usage tiers)

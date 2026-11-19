@@ -14,8 +14,10 @@ import { CampaignDetailPage } from './features/campaigns/CampaignDetailPage';
 import { TasksPage } from './features/tasks/TasksPage';
 import { ContentCalendarPage } from './features/content/ContentCalendarPage';
 import { ClientPortalPage } from './features/approvals/ClientPortalPage';
+import { AdvertisingPage } from './features/advertising/AdvertisingPage';
+import { AnalyticsPage } from './features/analytics/AnalyticsPage';
 import { FeaturePlaceholder } from './features/placeholder/FeaturePlaceholder';
-import { BarChart3, LineChart, FileSpreadsheet } from 'lucide-react';
+import { FileSpreadsheet } from 'lucide-react';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isLoading } = useAuth();
@@ -74,31 +76,11 @@ export const App: React.FC = () => {
             <Route path="content" element={<ContentCalendarPage />} />
             <Route path="portal" element={<ClientPortalPage />} />
 
-            {/* Upcoming Roadmap Phases 5 & 6 */}
-            <Route
-              path="advertising"
-              element={
-                <FeaturePlaceholder
-                  title="Paid Advertising Management"
-                  moduleName="Module 8"
-                  targetPhase="Phase 5"
-                  description="Track ad campaigns across Meta Ads, Google Ads, TikTok Ads, and LinkedIn Ads with spend metrics and creative tracking."
-                  icon={BarChart3}
-                />
-              }
-            />
-            <Route
-              path="analytics"
-              element={
-                <FeaturePlaceholder
-                  title="Advertising & Campaign Analytics"
-                  moduleName="Module 9 & 10"
-                  targetPhase="Phase 5"
-                  description="Comprehensive trend analysis for ROAS, impressions, reach, conversion rate, CPC, and platform performance comparisons."
-                  icon={LineChart}
-                />
-              }
-            />
+            {/* Phase 5: Paid Advertising Management & Cross-Platform Analytics */}
+            <Route path="advertising" element={<AdvertisingPage />} />
+            <Route path="analytics" element={<AnalyticsPage />} />
+
+            {/* Upcoming Roadmap Phase 6 */}
             <Route
               path="reports"
               element={

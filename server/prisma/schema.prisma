@@ -49,6 +49,7 @@ model Agency {
   tasks          Task[]
   contentPosts   ContentPost[]
   adAccounts     AdAccount[]
+  adCampaigns    AdCampaign[]
   budgets        Budget[]
   reports        Report[]
   activityLogs   ActivityLog[]
@@ -296,6 +297,7 @@ model AdAccount {
 
 model AdCampaign {
   id           String        @id @default(uuid())
+  agencyId     String        @default("")
   campaignId   String
   adAccountId  String?
   name         String
@@ -309,10 +311,12 @@ model AdCampaign {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
+  agency       Agency        @relation(fields: [agencyId], references: [id], onDelete: Cascade)
   campaign     Campaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   adAccount    AdAccount?    @relation(fields: [adAccountId], references: [id], onDelete: SetNull)
   metrics      AdMetric[]
 
+  @@index([agencyId])
   @@index([campaignId])
   @@map("ad_campaigns")
 }

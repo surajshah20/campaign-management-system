@@ -247,7 +247,96 @@ async function main() {
     ],
   });
 
-  // 9. Activity Log
+  // 9. Paid Advertising Setup & Metrics
+  const metaAccount = await prisma.adAccount.create({
+    data: {
+      agencyId: agency.id,
+      platform: 'META_ADS',
+      accountName: 'Apex Meta Ads Portfolio',
+      externalId: 'act_8271049281',
+      currency: 'NPR',
+    },
+  });
+
+  const googleAccount = await prisma.adAccount.create({
+    data: {
+      agencyId: agency.id,
+      platform: 'GOOGLE_ADS',
+      accountName: 'Apex Google Ads Portfolio',
+      externalId: '982-124-9012',
+      currency: 'NPR',
+    },
+  });
+
+  const metaAdCampaign = await prisma.adCampaign.create({
+    data: {
+      agencyId: agency.id,
+      campaignId: campaign.id,
+      adAccountId: metaAccount.id,
+      name: 'Cold Brew Instagram Reels & Stories Awareness',
+      platform: 'META_ADS',
+      budgetAmount: 80000,
+      spendAmount: 76000,
+      status: 'ACTIVE',
+    },
+  });
+
+  const googleAdCampaign = await prisma.adCampaign.create({
+    data: {
+      agencyId: agency.id,
+      campaignId: campaign.id,
+      adAccountId: googleAccount.id,
+      name: 'Cold Brew Specialty Search & PMax',
+      platform: 'GOOGLE_ADS',
+      budgetAmount: 60000,
+      spendAmount: 58000,
+      status: 'ACTIVE',
+    },
+  });
+
+  // Seed daily metrics for the past 14 days
+  const now = new Date();
+  for (let i = 13; i >= 0; i--) {
+    const metricDate = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+
+    // Meta metrics
+    const metaSpend = Math.round(5000 + Math.random() * 800);
+    const metaRev = Math.round(metaSpend * (2.8 + Math.random() * 0.8));
+    await prisma.adMetric.create({
+      data: {
+        adCampaignId: metaAdCampaign.id,
+        date: metricDate,
+        impressions: Math.round(11000 + Math.random() * 2500),
+        reach: Math.round(8500 + Math.random() * 1800),
+        clicks: Math.round(480 + Math.random() * 120),
+        spend: metaSpend,
+        conversions: Math.round(18 + Math.random() * 8),
+        leads: Math.round(12 + Math.random() * 6),
+        revenue: metaRev,
+        roas: parseFloat((metaRev / metaSpend).toFixed(2)),
+      },
+    });
+
+    // Google metrics
+    const googleSpend = Math.round(3800 + Math.random() * 600);
+    const googleRev = Math.round(googleSpend * (3.4 + Math.random() * 0.9));
+    await prisma.adMetric.create({
+      data: {
+        adCampaignId: googleAdCampaign.id,
+        date: metricDate,
+        impressions: Math.round(8500 + Math.random() * 2000),
+        reach: Math.round(6200 + Math.random() * 1200),
+        clicks: Math.round(560 + Math.random() * 140),
+        spend: googleSpend,
+        conversions: Math.round(22 + Math.random() * 9),
+        leads: Math.round(15 + Math.random() * 7),
+        revenue: googleRev,
+        roas: parseFloat((googleRev / googleSpend).toFixed(2)),
+      },
+    });
+  }
+
+  // 10. Activity Log
   await prisma.activityLog.createMany({
     data: [
       {
