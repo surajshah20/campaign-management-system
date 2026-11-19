@@ -6,13 +6,15 @@ import { config } from './config';
 import { errorHandler } from './middleware/errorHandler';
 import authRoutes from './routes/auth.routes';
 import workspaceRoutes from './routes/workspace.routes';
+import clientRoutes from './routes/client.routes';
+import teamRoutes from './routes/team.routes';
+import activityRoutes from './routes/activity.routes';
 
 export const app = express();
 
-// Security and standard middlewares
 app.use(
   helmet({
-    contentSecurityPolicy: false, // Allows flexible integration in dev
+    contentSecurityPolicy: false,
     crossOriginEmbedderPolicy: false,
   })
 );
@@ -42,6 +44,9 @@ app.get('/api/health', (_req, res) => {
 // API Routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/workspaces', workspaceRoutes);
+app.use('/api/v1/clients', clientRoutes);
+app.use('/api/v1/team', teamRoutes);
+app.use('/api/v1/activities', activityRoutes);
 
 // Global Error Handler
 app.use(errorHandler);

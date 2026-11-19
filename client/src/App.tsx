@@ -5,17 +5,18 @@ import { AppLayout } from './components/layout/AppLayout';
 import { LoginPage } from './features/auth/LoginPage';
 import { RegisterPage } from './features/auth/RegisterPage';
 import { OverviewPage } from './features/dashboard/OverviewPage';
+import { ClientsPage } from './features/clients/ClientsPage';
+import { ClientDetailPage } from './features/clients/ClientDetailPage';
+import { TeamPage } from './features/team/TeamPage';
+import { SettingsPage } from './features/settings/SettingsPage';
 import { FeaturePlaceholder } from './features/placeholder/FeaturePlaceholder';
 import {
-  Users2,
   Megaphone,
   CalendarDays,
   CheckSquare,
   BarChart3,
   LineChart,
   FileSpreadsheet,
-  Users,
-  Settings,
 } from 'lucide-react';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -60,18 +61,14 @@ export const App: React.FC = () => {
             }
           >
             <Route index element={<OverviewPage />} />
-            <Route
-              path="clients"
-              element={
-                <FeaturePlaceholder
-                  title="Client Management (CRM)"
-                  moduleName="Module 3"
-                  targetPhase="Phase 2"
-                  description="Manage client organizations, assigned account managers, brand assets, contact details, and dedicated client portal workspaces."
-                  icon={Users2}
-                />
-              }
-            />
+            
+            {/* Phase 2: Agency Operations & CRM */}
+            <Route path="clients" element={<ClientsPage />} />
+            <Route path="clients/:id" element={<ClientDetailPage />} />
+            <Route path="team" element={<TeamPage />} />
+            <Route path="settings" element={<SettingsPage />} />
+
+            {/* Upcoming Roadmap Phases */}
             <Route
               path="campaigns"
               element={
@@ -141,30 +138,6 @@ export const App: React.FC = () => {
                   targetPhase="Phase 6"
                   description="Generate professional agency-branded PDF campaign reports with shareable restricted client links."
                   icon={FileSpreadsheet}
-                />
-              }
-            />
-            <Route
-              path="team"
-              element={
-                <FeaturePlaceholder
-                  title="Team & Member Invitations"
-                  moduleName="Module 1"
-                  targetPhase="Phase 2"
-                  description="Invite agency team members, manage RBAC roles (Owner, Admin, Campaign Manager, Designer, Writer, Marketing Exec)."
-                  icon={Users}
-                />
-              }
-            />
-            <Route
-              path="settings"
-              element={
-                <FeaturePlaceholder
-                  title="Agency Workspace Settings"
-                  moduleName="Module 1"
-                  targetPhase="Phase 2"
-                  description="Configure workspace currency (NPR supported), brand logos, timezone, client portal domain, and subscription plan."
-                  icon={Settings}
                 />
               }
             />
