@@ -336,7 +336,108 @@ async function main() {
     });
   }
 
-  // 10. Activity Log
+  // 10. Reports (Phase 6)
+  const reportSnapshot = {
+    generatedAt: new Date().toISOString(),
+    clientName: client.name,
+    campaignsIncluded: [{ id: campaign.id, name: campaign.name, budget: campaign.allocatedBudget }],
+    financials: {
+      totalBudget: 250000,
+      totalSpend: 140000,
+      totalRevenue: 595000,
+      roas: 4.25,
+    },
+    performance: {
+      totalImpressions: 486000,
+      totalReach: 395000,
+      totalClicks: 17400,
+      ctr: 3.58,
+      cpc: 8.05,
+      totalConversions: 940,
+    },
+    deliverables: {
+      totalPosts: 8,
+      approvedPosts: 6,
+      publishedPosts: 4,
+      totalTasks: 6,
+      completedTasks: 4,
+    },
+    channels: [
+      { platform: 'META_ADS', spend: 80000, impressions: 320000, clicks: 12500, revenue: 352000, roas: 4.4 },
+      { platform: 'GOOGLE_ADS', spend: 60000, impressions: 166000, clicks: 4900, revenue: 243000, roas: 4.05 },
+    ],
+  };
+
+  await prisma.report.create({
+    data: {
+      agencyId: agency.id,
+      clientId: client.id,
+      campaignId: campaign.id,
+      title: 'Q4 Omnichannel Growth & Festive Campaign Performance Wrap-Up',
+      shareToken: 'himalayan-q4-executive-wrapup',
+      isPubliclyShared: true,
+      summaryJson: JSON.stringify(reportSnapshot),
+      observations:
+        'Video creative assets outperformed static imagery by 3.2x in CTR. Meta Ads drove high-volume awareness and top-of-funnel customer discovery, while Google Performance Max captured high-intent coffee bean subscription searches with a 4.05x blended ROAS.',
+      recommendations:
+        '1. Reallocate 20% of Q1 budget toward short-form TikTok & Instagram Reels showcasing single-origin brewing guides.\n2. Scale Google PMax budget ahead of the holiday gifting season.\n3. Implement a dedicated landing page for subscription signups to reduce CAC further.',
+    },
+  });
+
+  // 11. Third-Party Integrations (Phase 7)
+  const metaIntegration = await prisma.integration.create({
+    data: {
+      agencyId: agency.id,
+      provider: 'META_ADS',
+      name: 'Apex Meta Marketing API Connector',
+      status: 'CONNECTED',
+      configJson: JSON.stringify({
+        appId: '1092837465928',
+        accessToken: 'EAA...x99',
+        adAccountId: 'act_102938475',
+      }),
+      lastSyncAt: new Date(),
+      syncStatus: 'SUCCESS',
+    },
+  });
+
+  await prisma.integration.create({
+    data: {
+      agencyId: agency.id,
+      provider: 'GOOGLE_ADS',
+      name: 'Apex Google Ads API Connector',
+      status: 'CONNECTED',
+      configJson: JSON.stringify({
+        customerId: '982-123-4567',
+        developerToken: 'dev...382',
+      }),
+      lastSyncAt: new Date(Date.now() - 3600000),
+      syncStatus: 'SUCCESS',
+    },
+  });
+
+  await prisma.syncLog.createMany({
+    data: [
+      {
+        integrationId: metaIntegration.id,
+        agencyId: agency.id,
+        status: 'SUCCESS',
+        recordsProcessed: 2,
+        startedAt: new Date(Date.now() - 3600000),
+        completedAt: new Date(Date.now() - 3590000),
+      },
+      {
+        integrationId: metaIntegration.id,
+        agencyId: agency.id,
+        status: 'SUCCESS',
+        recordsProcessed: 2,
+        startedAt: new Date(),
+        completedAt: new Date(),
+      },
+    ],
+  });
+
+  // 12. Activity Log
   await prisma.activityLog.createMany({
     data: [
       {

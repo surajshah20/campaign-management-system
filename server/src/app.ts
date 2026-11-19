@@ -1,3 +1,4 @@
+import path from 'path';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -15,6 +16,9 @@ import contentRoutes from './routes/content.routes';
 import portalRoutes from './routes/portal.routes';
 import advertisingRoutes from './routes/advertising.routes';
 import analyticsRoutes from './routes/analytics.routes';
+import reportRoutes from './routes/report.routes';
+import integrationRoutes from './routes/integration.routes';
+import storageRoutes from './routes/storage.routes';
 
 export const app = express();
 
@@ -59,6 +63,12 @@ app.use('/api/v1/content', contentRoutes);
 app.use('/api/v1/portal', portalRoutes);
 app.use('/api/v1/advertising', advertisingRoutes);
 app.use('/api/v1/analytics', analyticsRoutes);
+app.use('/api/v1/reports', reportRoutes);
+app.use('/api/v1/integrations', integrationRoutes);
+app.use('/api/v1/storage', storageRoutes);
+
+// Static Asset Storage
+app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads')));
 
 // Global Error Handler
 app.use(errorHandler);

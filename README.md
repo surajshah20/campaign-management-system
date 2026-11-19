@@ -116,6 +116,25 @@ Granular, backend-enforced permissions across 7 distinct personas:
 * Dynamic time windows: Last 7 Days, Last 14 Days, Last 30 Days, Last 90 Days.
 * Cross-campaign and platform filter dropdowns.
 
+### 10. Client Reports & Presentations
+* **Immutable Snapshot Engine**: Freezes campaign financials, ad spend, revenue, ROAS, creative deliverables, and completed tasks at report generation time in `summaryJson`.
+* **Public & Client Presentation Viewer** (`/reports/share/:token`):
+  * Executive presentation layout with agency and client branding.
+  * Zero-credential leak: internal notes, margins, and passwords are completely excluded.
+  * Dynamic confidentiality notice and date stamps.
+* **1-Click Print & PDF Export**: Native `@media print` optimization generating presentation-grade PDFs directly from the browser without third-party server renderers.
+* **Executive Commentary**: Custom observations and strategic next-period recommendations.
+
+### 11. Third-Party Integrations & Storage
+* **Supported Platform Connectors**:
+  * **Meta Marketing API**: Automated ad metric syncing for Facebook & Instagram campaigns.
+  * **Google Ads API**: Search, Performance Max, and YouTube conversion value syncing.
+  * **TikTok Ads Manager API**: Short-form video engagement, CPM, and ROAS tracking.
+  * **AWS S3 & Cloudinary Storage**: Cloud asset management with presigned and CDN delivery.
+* **Security & Token Masking**: All API secrets and access tokens are masked upon storage (`EAAB...98x1`).
+* **Automated Sync Engine & Audit Logs**: Manual or scheduled synchronization jobs with execution duration, records processed, and status recorded in `sync_logs`.
+* **Inbound Webhook Receiver**: Endpoint for real-time external event ingestion (`POST /api/v1/integrations/webhooks/:provider`).
+
 ---
 
 ## Technology Stack
@@ -170,6 +189,8 @@ campaign_management_system/
     │       ├── approvals/       # ClientPortalPage
     │       ├── advertising/     # AdvertisingPage (Paid media management & CSV import)
     │       ├── analytics/       # AnalyticsPage (Cross-platform performance charts)
+    │       ├── reports/         # ReportsPage & PublicReportView (PDF-ready presentations)
+    │       ├── integrations/    # IntegrationsPage (Meta, Google, TikTok, S3/Cloudinary)
     │       ├── team/            # TeamPage (Members & Invitations)
     │       └── settings/        # SettingsPage (Workspace configuration)
     └── tailwind.config.js       # Design system tokens & Inter font
@@ -265,9 +286,12 @@ npx tsx test/campaigns-content.test.ts
 
 # Run Paid Advertising & Analytics Tests
 npx tsx test/advertising-analytics.test.ts
+
+# Run Client Reports & Third-Party Integrations Tests
+npx tsx test/reports-integrations.test.ts
 ```
 
-All 22 integration tests pass with zero warnings.
+All 28 integration tests pass with zero warnings.
 
 ---
 
@@ -287,8 +311,8 @@ All 22 integration tests pass with zero warnings.
 - [x] **Phase 3: Campaign Operations** (Campaign wizard, Multi-platform lifecycle, Interactive 5-Column Kanban Board)
 - [x] **Phase 4: Content Studio & Approvals** (Social calendar, Immutable version iterations, Restricted Client Portal)
 - [x] **Phase 5: Paid Advertising & Analytics** (Meta & Google Ad performance ingestion, ROAS trends, Conversion charts)
-- [ ] **Phase 6: Client Reports** (PDF report generation & public share links)
-- [ ] **Phase 7: Third-Party Integrations** (Meta Marketing API, Google Ads API, S3/Cloudinary media storage)
+- [x] **Phase 6: Client Reports** (PDF report generation & public share links)
+- [x] **Phase 7: Third-Party Integrations** (Meta Marketing API, Google Ads API, S3/Cloudinary media storage)
 - [ ] **Phase 8: Commercial SaaS** (Subscription billing & usage tiers)
 
 ---

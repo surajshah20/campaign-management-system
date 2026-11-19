@@ -28,6 +28,7 @@ model User {
   approvalComments ApprovalComment[]
   activityLogs   ActivityLog[]
   notifications  Notification[]
+  uploadedFiles  StorageFile[]
 
   @@map("users")
 }
@@ -54,6 +55,8 @@ model Agency {
   reports        Report[]
   activityLogs   ActivityLog[]
   notifications  Notification[]
+  integrations   Integration[]
+  storageFiles   StorageFile[]
 
   @@map("agencies")
 }
@@ -436,4 +439,61 @@ model Notification {
 
   @@index([userId, isRead])
   @@map("notifications")
+}
+
+model Integration {
+  id              String    @id @default(uuid())
+  agencyId        String
+  provider        String    // META_ADS, GOOGLE_ADS, TIKTOK_ADS, LINKEDIN_ADS, STORAGE_S3, STORAGE_CLOUDINARY
+  name            String
+  status          String    @default("DISCONNECTED") // CONNECTED, DISCONNECTED, ERROR, SYNCING
+  configJson      String?   // Encrypted/masked API credentials, account IDs, webhook secrets
+  lastSyncAt      DateTime?
+  syncStatus      String?   // SUCCESS, FAILED, PARTIAL
+  syncError       String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  agency          Agency    @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  syncLogs        SyncLog[]
+
+  @@unique([agencyId, provider])
+  @@index([agencyId])
+  @@map("integrations")
+}
+
+model SyncLog {
+  id              String      @id @default(uuid())
+  integrationId   String
+  agencyId        String
+  status          String      // SUCCESS, FAILED, PARTIAL
+  recordsProcessed Int        @default(0)
+  errorMessage    String?
+  startedAt       DateTime    @default(now())
+  completedAt     DateTime?
+
+  integration     Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  @@index([integrationId])
+  @@index([agencyId])
+  @@map("sync_logs")
+}
+
+model StorageFile {
+  id              String    @id @default(uuid())
+  agencyId        String
+  uploadedById    String?
+  fileName        String
+  fileSize        Int       @default(0)
+  mimeType        String
+  storageProvider String    @default("LOCAL") // LOCAL, S3, CLOUDINARY
+  publicUrl       String
+  metadataJson    String?
+  createdAt       DateTime  @default(now())
+
+  agency          Agency    @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  uploadedBy      User?     @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  @@index([agencyId])
+  @@map("storage_files")
 }

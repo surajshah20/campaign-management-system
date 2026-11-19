@@ -35,6 +35,10 @@ lerna-debug.log*
 prisma/*.db
 prisma/*.db-journal
 
+# Uploaded Files
+uploads/
+server/uploads/
+
 # Editor & OS files
 .DS_Store
 Thumbs.db

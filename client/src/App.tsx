@@ -16,8 +16,9 @@ import { ContentCalendarPage } from './features/content/ContentCalendarPage';
 import { ClientPortalPage } from './features/approvals/ClientPortalPage';
 import { AdvertisingPage } from './features/advertising/AdvertisingPage';
 import { AnalyticsPage } from './features/analytics/AnalyticsPage';
-import { FeaturePlaceholder } from './features/placeholder/FeaturePlaceholder';
-import { FileSpreadsheet } from 'lucide-react';
+import { ReportsPage } from './features/reports/ReportsPage';
+import { PublicReportView } from './features/reports/PublicReportView';
+import { IntegrationsPage } from './features/integrations/IntegrationsPage';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isLoading } = useAuth();
@@ -47,9 +48,10 @@ export const App: React.FC = () => {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Public Auth Routes */}
+          {/* Public Auth & Presentation Routes */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/reports/share/:token" element={<PublicReportView />} />
 
           {/* Protected Application Routes */}
           <Route
@@ -80,19 +82,9 @@ export const App: React.FC = () => {
             <Route path="advertising" element={<AdvertisingPage />} />
             <Route path="analytics" element={<AnalyticsPage />} />
 
-            {/* Upcoming Roadmap Phase 6 */}
-            <Route
-              path="reports"
-              element={
-                <FeaturePlaceholder
-                  title="Client Reports & Presentations"
-                  moduleName="Module 12"
-                  targetPhase="Phase 6"
-                  description="Generate professional agency-branded PDF campaign reports with shareable restricted client links."
-                  icon={FileSpreadsheet}
-                />
-              }
-            />
+            {/* Phase 6 & Phase 7: Client Reports, Presentations & Third-Party Integrations */}
+            <Route path="reports" element={<ReportsPage />} />
+            <Route path="integrations" element={<IntegrationsPage />} />
           </Route>
 
           {/* Catch-all redirect to root */}
