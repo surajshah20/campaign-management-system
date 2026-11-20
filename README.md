@@ -135,6 +135,16 @@ Granular, backend-enforced permissions across 7 distinct personas:
 * **Automated Sync Engine & Audit Logs**: Manual or scheduled synchronization jobs with execution duration, records processed, and status recorded in `sync_logs`.
 * **Inbound Webhook Receiver**: Endpoint for real-time external event ingestion (`POST /api/v1/integrations/webhooks/:provider`).
 
+### 12. Commercial SaaS Subscriptions & Resource Quotas
+* **Multi-Tier Agency Plans**:
+  * **Starter** (NPR 6,500/mo or $49/mo): 3 clients, 5 team seats, 5 campaigns, 5 GB storage.
+  * **Growth** (NPR 19,500/mo or $149/mo): 15 clients, 20 team seats, 30 campaigns, 50 GB storage, custom branding, priority support.
+  * **Enterprise / Scale** (NPR 39,500/mo or $299/mo): Unlimited clients, team seats, campaigns, 500 GB high-speed CDN, API connectors, custom SLA.
+* **Flexible Billing Intervals**: Monthly and Annual subscriptions with an automatic **20% annual discount**.
+* **Real-Time Quota Telemetry**: Visual progress gauges tracking active clients, team member seats, active campaigns, and CDN storage.
+* **Downgrade Safety Guard**: Prevents downgrading to lower tiers if the agency's current active resources exceed target plan allowances.
+* **Invoicing & Ledger**: Complete invoice history with status tracking (`PAID`), printable receipts, and encrypted payment card management.
+
 ---
 
 ## Technology Stack
@@ -191,6 +201,7 @@ campaign_management_system/
     │       ├── analytics/       # AnalyticsPage (Cross-platform performance charts)
     │       ├── reports/         # ReportsPage & PublicReportView (PDF-ready presentations)
     │       ├── integrations/    # IntegrationsPage (Meta, Google, TikTok, S3/Cloudinary)
+    │       ├── billing/         # BillingPage (SaaS subscriptions, tiers & invoice receipts)
     │       ├── team/            # TeamPage (Members & Invitations)
     │       └── settings/        # SettingsPage (Workspace configuration)
     └── tailwind.config.js       # Design system tokens & Inter font
@@ -289,9 +300,12 @@ npx tsx test/advertising-analytics.test.ts
 
 # Run Client Reports & Third-Party Integrations Tests
 npx tsx test/reports-integrations.test.ts
+
+# Run Commercial SaaS Subscriptions & Quotas Tests
+npx tsx test/billing-subscription.test.ts
 ```
 
-All 28 integration tests pass with zero warnings.
+All 35 integration tests pass with zero warnings.
 
 ---
 
@@ -313,7 +327,7 @@ All 28 integration tests pass with zero warnings.
 - [x] **Phase 5: Paid Advertising & Analytics** (Meta & Google Ad performance ingestion, ROAS trends, Conversion charts)
 - [x] **Phase 6: Client Reports** (PDF report generation & public share links)
 - [x] **Phase 7: Third-Party Integrations** (Meta Marketing API, Google Ads API, S3/Cloudinary media storage)
-- [ ] **Phase 8: Commercial SaaS** (Subscription billing & usage tiers)
+- [x] **Phase 8: Commercial SaaS** (Subscription billing, pricing plans & usage quotas)
 
 ---
 

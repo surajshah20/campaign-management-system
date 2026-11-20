@@ -19,6 +19,7 @@ import analyticsRoutes from './routes/analytics.routes';
 import reportRoutes from './routes/report.routes';
 import integrationRoutes from './routes/integration.routes';
 import storageRoutes from './routes/storage.routes';
+import subscriptionRoutes from './routes/subscription.routes';
 
 export const app = express();
 
@@ -66,6 +67,7 @@ app.use('/api/v1/analytics', analyticsRoutes);
 app.use('/api/v1/reports', reportRoutes);
 app.use('/api/v1/integrations', integrationRoutes);
 app.use('/api/v1/storage', storageRoutes);
+app.use('/api/v1/billing', subscriptionRoutes);
 
 // Static Asset Storage
 app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads')));

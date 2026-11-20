@@ -437,7 +437,65 @@ async function main() {
     ],
   });
 
-  // 12. Activity Log
+  // 12. SaaS Subscription & Billing (Phase 8)
+  const subNow = new Date();
+  const subPeriodEnd = new Date();
+  subPeriodEnd.setDate(subNow.getDate() + 28);
+
+  const agencySub = await prisma.subscription.create({
+    data: {
+      agencyId: agency.id,
+      plan: 'GROWTH',
+      billingCycle: 'MONTHLY',
+      status: 'ACTIVE',
+      currentPeriodStart: new Date(subNow.getTime() - 2 * 24 * 3600 * 1000),
+      currentPeriodEnd: subPeriodEnd,
+      cancelAtPeriodEnd: false,
+      paymentMethodBrand: 'Mastercard',
+      paymentMethodLast4: '5566',
+      paymentMethodExp: '08/29',
+    },
+  });
+
+  await prisma.billingInvoice.createMany({
+    data: [
+      {
+        agencyId: agency.id,
+        subscriptionId: agencySub.id,
+        invoiceNumber: 'INV-2026-1082',
+        amount: 19500,
+        currency: 'NPR',
+        status: 'PAID',
+        billingReason: 'SUBSCRIPTION_CYCLE',
+        paidAt: new Date(subNow.getTime() - 60 * 24 * 3600 * 1000),
+        createdAt: new Date(subNow.getTime() - 60 * 24 * 3600 * 1000),
+      },
+      {
+        agencyId: agency.id,
+        subscriptionId: agencySub.id,
+        invoiceNumber: 'INV-2026-1144',
+        amount: 19500,
+        currency: 'NPR',
+        status: 'PAID',
+        billingReason: 'SUBSCRIPTION_CYCLE',
+        paidAt: new Date(subNow.getTime() - 30 * 24 * 3600 * 1000),
+        createdAt: new Date(subNow.getTime() - 30 * 24 * 3600 * 1000),
+      },
+      {
+        agencyId: agency.id,
+        subscriptionId: agencySub.id,
+        invoiceNumber: 'INV-2026-1219',
+        amount: 19500,
+        currency: 'NPR',
+        status: 'PAID',
+        billingReason: 'SUBSCRIPTION_CYCLE',
+        paidAt: new Date(subNow.getTime() - 2 * 24 * 3600 * 1000),
+        createdAt: new Date(subNow.getTime() - 2 * 24 * 3600 * 1000),
+      },
+    ],
+  });
+
+  // 13. Activity Log
   await prisma.activityLog.createMany({
     data: [
       {

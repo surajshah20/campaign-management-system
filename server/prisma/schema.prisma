@@ -57,6 +57,8 @@ model Agency {
   notifications  Notification[]
   integrations   Integration[]
   storageFiles   StorageFile[]
+  subscription   Subscription?
+  invoices       BillingInvoice[]
 
   @@map("agencies")
 }
@@ -496,4 +498,49 @@ model StorageFile {
 
   @@index([agencyId])
   @@map("storage_files")
+}
+
+model Subscription {
+  id                   String           @id @default(uuid())
+  agencyId             String           @unique
+  plan                 String           @default("GROWTH") // STARTER, GROWTH, ENTERPRISE
+  billingCycle         String           @default("MONTHLY") // MONTHLY, ANNUAL
+  status               String           @default("ACTIVE") // TRIALING, ACTIVE, PAST_DUE, CANCELED
+  currentPeriodStart   DateTime         @default(now())
+  currentPeriodEnd     DateTime
+  cancelAtPeriodEnd    Boolean          @default(false)
+  trialEndsAt          DateTime?
+  paymentMethodBrand   String?          @default("Visa")
+  paymentMethodLast4   String?          @default("4242")
+  paymentMethodExp     String?          @default("12/28")
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  agency               Agency           @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  invoices             BillingInvoice[]
+
+  @@map("subscriptions")
+}
+
+model BillingInvoice {
+  id             String        @id @default(uuid())
+  agencyId       String
+  subscriptionId String?
+  invoiceNumber  String        @unique
+  amount         Float
+  currency       String        @default("NPR")
+  status         String        @default("PAID") // PAID, PENDING, FAILED
+  billingReason  String?       // SUBSCRIPTION_CYCLE, PLAN_UPGRADE, ADDON
+  invoicePdfUrl  String?
+  paidAt         DateTime?     @default(now())
+  createdAt      DateTime      @default(now())
+
+  agency         Agency        @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  @@index([agencyId])
+  @@index([subscriptionId])
+  @@map("billing_invoices")
 }

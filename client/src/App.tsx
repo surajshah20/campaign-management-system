@@ -19,6 +19,7 @@ import { AnalyticsPage } from './features/analytics/AnalyticsPage';
 import { ReportsPage } from './features/reports/ReportsPage';
 import { PublicReportView } from './features/reports/PublicReportView';
 import { IntegrationsPage } from './features/integrations/IntegrationsPage';
+import { BillingPage } from './features/billing/BillingPage';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isLoading } = useAuth();
@@ -85,6 +86,9 @@ export const App: React.FC = () => {
             {/* Phase 6 & Phase 7: Client Reports, Presentations & Third-Party Integrations */}
             <Route path="reports" element={<ReportsPage />} />
             <Route path="integrations" element={<IntegrationsPage />} />
+
+            {/* Phase 8: Commercial SaaS Subscriptions & Usage Quotas */}
+            <Route path="billing" element={<BillingPage />} />
           </Route>
 
           {/* Catch-all redirect to root */}

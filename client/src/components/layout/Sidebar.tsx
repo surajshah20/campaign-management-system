@@ -10,6 +10,7 @@ import {
   LineChart,
   FileSpreadsheet,
   Puzzle,
+  CreditCard,
   Users,
   Settings,
   ChevronLeft,
@@ -39,6 +40,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
     { label: 'Analytics', href: '/analytics', icon: LineChart },
     { label: 'Reports', href: '/reports', icon: FileSpreadsheet },
     { label: 'Integrations', href: '/integrations', icon: Puzzle },
+    { label: 'Billing & Plans', href: '/billing', icon: CreditCard },
     { label: 'Team', href: '/team', icon: Users },
     { label: 'Settings', href: '/settings', icon: Settings },
   ];
