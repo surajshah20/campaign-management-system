@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../db/prisma';
@@ -199,6 +200,152 @@ export class AuthService {
         slug: m.agency.slug,
         role: m.role,
       })),
+    };
+  }
+
+  static async getInvitationDetails(rawToken: string) {
+    const tokenHash = crypto.createHash('sha256').update(rawToken.trim()).digest('hex');
+
+    const invitation = await prisma.invitation.findFirst({
+      where: {
+        tokenHash,
+        acceptedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      include: {
+        agency: { select: { id: true, name: true, logoUrl: true, currency: true } },
+      },
+    });
+
+    if (!invitation) {
+      throw new AppError('Invitation is invalid, expired, or has already been accepted.', 404);
+    }
+
+    return {
+      email: invitation.email,
+      role: invitation.role,
+      agency: invitation.agency,
+    };
+  }
+
+  static async acceptInvitation(input: {
+    token: string;
+    firstName: string;
+    lastName: string;
+    password: string;
+  }) {
+    const tokenHash = crypto.createHash('sha256').update(input.token.trim()).digest('hex');
+
+    const invitation = await prisma.invitation.findFirst({
+      where: {
+        tokenHash,
+        acceptedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      include: {
+        agency: true,
+      },
+    });
+
+    if (!invitation) {
+      throw new AppError('Invitation is invalid, expired, or has already been accepted.', 404);
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(input.password, salt);
+
+    const result = await prisma.$transaction(async (tx) => {
+      // Find or create User
+      let user = await tx.user.findUnique({
+        where: { email: invitation.email },
+      });
+
+      if (!user) {
+        user = await tx.user.create({
+          data: {
+            email: invitation.email,
+            passwordHash,
+            firstName: input.firstName.trim(),
+            lastName: input.lastName.trim(),
+            emailVerified: true,
+          },
+        });
+      } else {
+        // Update credentials if user already existed
+        user = await tx.user.update({
+          where: { id: user.id },
+          data: {
+            passwordHash,
+            firstName: input.firstName.trim(),
+            lastName: input.lastName.trim(),
+            emailVerified: true,
+          },
+        });
+      }
+
+      // Add to AgencyMember
+      const existingMembership = await tx.agencyMember.findUnique({
+        where: {
+          agencyId_userId: {
+            agencyId: invitation.agencyId,
+            userId: user.id,
+          },
+        },
+      });
+
+      if (!existingMembership) {
+        await tx.agencyMember.create({
+          data: {
+            agencyId: invitation.agencyId,
+            userId: user.id,
+            role: invitation.role,
+          },
+        });
+      }
+
+      // Mark invitation accepted
+      await tx.invitation.update({
+        where: { id: invitation.id },
+        data: { acceptedAt: new Date() },
+      });
+
+      await tx.activityLog.create({
+        data: {
+          agencyId: invitation.agencyId,
+          userId: user.id,
+          action: 'INVITATION_ACCEPTED',
+          entityType: 'INVITATION',
+          entityId: invitation.id,
+          metadata: JSON.stringify({
+            email: user.email,
+            role: invitation.role,
+            agencyName: invitation.agency.name,
+          }),
+        },
+      });
+
+      return { user, agency: invitation.agency, role: invitation.role };
+    });
+
+    const jwtToken = this.generateToken(result.user.id, result.user.email);
+
+    return {
+      token: jwtToken,
+      user: {
+        id: result.user.id,
+        email: result.user.email,
+        firstName: result.user.firstName,
+        lastName: result.user.lastName,
+        avatarUrl: result.user.avatarUrl,
+        isSuperAdmin: result.user.isSuperAdmin,
+      },
+      currentAgency: {
+        id: result.agency.id,
+        name: result.agency.name,
+        slug: result.agency.slug,
+        role: result.role,
+        currency: result.agency.currency,
+      },
     };
   }
 

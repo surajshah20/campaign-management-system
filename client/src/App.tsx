@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { AppLayout } from './components/layout/AppLayout';
 import { LoginPage } from './features/auth/LoginPage';
 import { RegisterPage } from './features/auth/RegisterPage';
+import { AcceptInvitePage } from './features/auth/AcceptInvitePage';
 import { OverviewPage } from './features/dashboard/OverviewPage';
 import { ClientsPage } from './features/clients/ClientsPage';
 import { ClientDetailPage } from './features/clients/ClientDetailPage';
@@ -52,6 +53,7 @@ export const App: React.FC = () => {
           {/* Public Auth & Presentation Routes */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/join" element={<AcceptInvitePage />} />
           <Route path="/reports/share/:token" element={<PublicReportView />} />
 
           {/* Protected Application Routes */}

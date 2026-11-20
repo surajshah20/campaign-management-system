@@ -15,6 +15,8 @@ import {
   Trash2,
   Clock,
   CheckCircle,
+  Copy,
+  Check,
 } from 'lucide-react';
 
 interface MemberItem {
@@ -52,6 +54,7 @@ export const TeamPage: React.FC = () => {
   const [inviteRole, setInviteRole] = useState('CAMPAIGN_MANAGER');
   const [isInviting, setIsInviting] = useState(false);
   const [lastInviteUrl, setLastInviteUrl] = useState<string | null>(null);
+  const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null);
 
   const fetchTeam = async () => {
     try {
@@ -110,6 +113,20 @@ export const TeamPage: React.FC = () => {
       await fetchTeam();
     } catch (err: any) {
       alert(err.message || 'Failed to revoke invitation.');
+    }
+  };
+
+  const handleCopyInviteLink = async (invitationId: string) => {
+    try {
+      const res = await apiRequest<{ inviteToken: string }>(
+        `/api/v1/team/invitations/${invitationId}/token`
+      );
+      const joinUrl = `${window.location.origin}/join?token=${res.inviteToken}`;
+      await navigator.clipboard.writeText(joinUrl);
+      setCopiedInviteId(invitationId);
+      setTimeout(() => setCopiedInviteId(null), 2500);
+    } catch (err: any) {
+      alert(err.message || 'Failed to retrieve invitation link.');
     }
   };
 
@@ -334,8 +351,26 @@ export const TeamPage: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-2">
                       {getRoleBadge(inv.role)}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-[11px] h-7 px-2.5 flex items-center space-x-1"
+                        onClick={() => handleCopyInviteLink(inv.id)}
+                      >
+                        {copiedInviteId === inv.id ? (
+                          <>
+                            <Check className="w-3 h-3 text-success-600" />
+                            <span className="text-success-600 font-medium">Copied!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3 h-3 text-text-secondary" />
+                            <span>Copy Link</span>
+                          </>
+                        )}
+                      </Button>
                       <Button
                         size="sm"
                         variant="ghost"

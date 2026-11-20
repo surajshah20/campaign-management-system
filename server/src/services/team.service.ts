@@ -127,6 +127,33 @@ export class TeamService {
     };
   }
 
+  static async getInvitationToken(
+    agencyId: string,
+    invitationId: string,
+    _userId: string
+  ) {
+    const invitation = await prisma.invitation.findFirst({
+      where: { id: invitationId, agencyId, acceptedAt: null },
+    });
+
+    if (!invitation) {
+      throw new AppError('Pending invitation not found.', 404);
+    }
+
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    await prisma.invitation.update({
+      where: { id: invitationId },
+      data: { tokenHash, expiresAt },
+    });
+
+    return {
+      inviteToken: rawToken,
+    };
+  }
+
   static async cancelInvitation(
     agencyId: string,
     invitationId: string,

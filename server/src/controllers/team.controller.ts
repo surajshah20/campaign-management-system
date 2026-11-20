@@ -74,6 +74,22 @@ export class TeamController {
     }
   }
 
+  static async getInvitationToken(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = await TeamService.getInvitationToken(
+        req.tenant!.agencyId,
+        req.params.id as string,
+        req.user!.id
+      );
+      return res.status(200).json({
+        success: true,
+        data,
+      });
+    } catch (error) {
+      return next(error);
+    }
+  }
+
   static async cancelInvitation(req: Request, res: Response, next: NextFunction) {
     try {
       await TeamService.cancelInvitation(

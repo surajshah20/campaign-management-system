@@ -15,6 +15,7 @@ router.use(authenticate, requireTenant);
 
 router.get('/members', TeamController.listMembers);
 router.get('/invitations', requirePermission('team:invite'), TeamController.listInvitations);
+router.get('/invitations/:id/token', requirePermission('team:invite'), TeamController.getInvitationToken);
 
 router.post(
   '/invite',

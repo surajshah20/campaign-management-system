@@ -19,6 +19,15 @@ export const loginSchema = z.object({
   }),
 });
 
+export const acceptInvitationSchema = z.object({
+  body: z.object({
+    token: z.string().min(10, 'Invitation token is required'),
+    firstName: z.string().min(1, 'First name is required'),
+    lastName: z.string().min(1, 'Last name is required'),
+    password: z.string().min(8, 'Password must be at least 8 characters long'),
+  }),
+});
+
 export class AuthController {
   static async register(req: Request, res: Response, next: NextFunction) {
     try {
@@ -107,6 +116,47 @@ export class AuthController {
       return res.status(200).json({
         success: true,
         data: profile,
+      });
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  static async getInvitation(req: Request, res: Response, next: NextFunction) {
+    try {
+      const details = await AuthService.getInvitationDetails(req.params.token as string);
+      return res.status(200).json({
+        success: true,
+        data: details,
+      });
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  static async acceptInvitation(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await AuthService.acceptInvitation(req.body);
+
+      res.cookie('access_token', result.token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+
+      if (result.currentAgency) {
+        res.cookie('current_agency_id', result.currentAgency.id, {
+          httpOnly: false,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        data: result,
       });
     } catch (error) {
       return next(error);
