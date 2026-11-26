@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { apiRequest } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../components/ui/Toast';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -42,6 +43,7 @@ interface InvitationItem {
 
 export const TeamPage: React.FC = () => {
   const { currentAgency, user: currentUser } = useAuth();
+  const { success, error: toastError, info } = useToast();
 
   const [members, setMembers] = useState<MemberItem[]>([]);
   const [invitations, setInvitations] = useState<InvitationItem[]>([]);
@@ -97,9 +99,10 @@ export const TeamPage: React.FC = () => {
         `${window.location.origin}/join?token=${res.inviteToken}`
       );
       setInviteEmail('');
+      success('Invitation generated', `Onboarding link ready for ${inviteEmail.trim()}`);
       await fetchTeam();
     } catch (err: any) {
-      alert(err.message || 'Failed to send invitation.');
+      toastError(err.message || 'Failed to send invitation.');
     } finally {
       setIsInviting(false);
     }
@@ -110,9 +113,10 @@ export const TeamPage: React.FC = () => {
       await apiRequest(`/api/v1/team/invitations/${invitationId}`, {
         method: 'DELETE',
       });
+      info('Invitation revoked');
       await fetchTeam();
     } catch (err: any) {
-      alert(err.message || 'Failed to revoke invitation.');
+      toastError(err.message || 'Failed to revoke invitation.');
     }
   };
 
@@ -124,9 +128,10 @@ export const TeamPage: React.FC = () => {
       const joinUrl = `${window.location.origin}/join?token=${res.inviteToken}`;
       await navigator.clipboard.writeText(joinUrl);
       setCopiedInviteId(invitationId);
+      success('Link copied', 'Invitation URL copied to clipboard.');
       setTimeout(() => setCopiedInviteId(null), 2500);
     } catch (err: any) {
-      alert(err.message || 'Failed to retrieve invitation link.');
+      toastError(err.message || 'Failed to retrieve invitation link.');
     }
   };
 
@@ -136,9 +141,10 @@ export const TeamPage: React.FC = () => {
         method: 'PATCH',
         body: JSON.stringify({ role: newRole }),
       });
+      success('Role updated', 'Member permissions updated successfully.');
       await fetchTeam();
     } catch (err: any) {
-      alert(err.message || 'Failed to update role.');
+      toastError(err.message || 'Failed to update role.');
     }
   };
 
@@ -150,9 +156,10 @@ export const TeamPage: React.FC = () => {
       await apiRequest(`/api/v1/team/members/${membershipId}`, {
         method: 'DELETE',
       });
+      info('Member removed', `${name} has been removed from workspace.`);
       await fetchTeam();
     } catch (err: any) {
-      alert(err.message || 'Failed to remove team member.');
+      toastError(err.message || 'Failed to remove team member.');
     }
   };
 

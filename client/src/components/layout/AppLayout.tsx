@@ -18,8 +18,8 @@ export const AppLayout: React.FC = () => {
       <div className="flex flex-1 flex-col overflow-hidden">
         <TopNavigation />
 
-        <main className="flex-1 overflow-y-auto p-6 md:p-8">
-          <div className="mx-auto max-w-7xl">
+        <main className="flex-1 overflow-y-auto p-5 md:p-8">
+          <div className="mx-auto max-w-[1400px]">
             <Outlet />
           </div>
         </main>

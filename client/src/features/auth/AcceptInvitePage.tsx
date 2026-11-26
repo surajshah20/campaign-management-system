@@ -9,7 +9,10 @@ import {
   Building2,
   AlertCircle,
   ArrowRight,
+  Shield,
+  Lock,
 } from 'lucide-react';
+import { BrandLogo } from '../../components/brand/BrandLogo';
 
 interface InvitationDetails {
   email: string;
@@ -100,23 +103,18 @@ export const AcceptInvitePage: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
-      <div className="w-full max-w-md space-y-6">
+    <div className="flex min-h-screen items-center justify-center bg-background p-4 selection:bg-primary-100 selection:text-primary-800">
+      <div className="w-full max-w-[440px] space-y-6">
         {/* Brand Header */}
-        <div className="text-center space-y-1">
-          <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary-600 text-white font-bold text-sm shadow-subtle mb-2">
-            AO
-          </div>
-          <h1 className="text-xl font-bold tracking-tight text-text-primary">
-            Join Agency Workspace
-          </h1>
-          <p className="text-xs text-text-secondary">
-            Set up your credentials to collaborate on campaigns, tasks, and media.
+        <div className="flex flex-col items-center text-center space-y-2">
+          <BrandLogo size="lg" showWordmark={true} />
+          <p className="text-xs text-text-secondary max-w-xs mt-1">
+            Accept team invitation and join your organization's workspace.
           </p>
         </div>
 
         {/* Card */}
-        <div className="rounded-lg border border-border bg-white p-6 shadow-subtle">
+        <div className="rounded-xl border border-border bg-white p-7 shadow-card">
           {isLoading ? (
             <div className="space-y-4">
               <Skeleton className="h-16 w-full" />
@@ -145,13 +143,13 @@ export const AcceptInvitePage: React.FC = () => {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Agency Invite Badge */}
-              <div className="rounded-md border border-primary-100 bg-primary-50/60 p-3.5 space-y-1 text-xs">
+              <div className="rounded-lg border border-primary-100 bg-primary-50/60 p-3.5 space-y-1 text-xs">
                 <div className="flex items-center space-x-2 text-primary-800 font-semibold">
                   <Building2 className="w-4 h-4 text-primary-600" />
                   <span>{details.agency.name}</span>
                 </div>
                 <p className="text-[11px] text-primary-700">
-                  You are joining as{' '}
+                  You have been invited as{' '}
                   <span className="font-bold underline">
                     {details.role.replace('_', ' ')}
                   </span>
@@ -161,93 +159,75 @@ export const AcceptInvitePage: React.FC = () => {
 
               {/* Email (Readonly) */}
               <div>
-                <label className="block text-xs font-medium text-text-primary mb-1">
-                  Your Account Email
+                <label className="block text-[11px] font-semibold text-text-primary uppercase tracking-tight mb-1">
+                  Invited Email Address
                 </label>
                 <input
                   type="email"
                   readOnly
                   value={details.email}
-                  className="w-full rounded-md border border-border bg-slate-50 px-3 py-2 text-xs text-text-secondary font-mono cursor-not-allowed"
+                  className="flex h-9 w-full rounded-md border border-border bg-[#F2F4F7] px-3 py-1.5 text-xs text-text-secondary font-mono cursor-not-allowed"
                 />
               </div>
 
               {/* Name fields */}
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-text-primary mb-1">
-                    First Name <span className="text-red-500">*</span>
-                  </label>
-                  <Input
-                    placeholder="Suraj"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    required
-                    autoFocus
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-text-primary mb-1">
-                    Last Name <span className="text-red-500">*</span>
-                  </label>
-                  <Input
-                    placeholder="Shah"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Password */}
-              <div>
-                <label className="block text-xs font-medium text-text-primary mb-1">
-                  Create Private Password <span className="text-red-500">*</span>
-                </label>
                 <Input
-                  type="password"
-                  placeholder="At least 8 characters"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  label="First Name"
+                  placeholder="e.g. Suraj"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  required
+                  autoFocus
+                />
+                <Input
+                  label="Last Name"
+                  placeholder="e.g. Shah"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
                   required
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-medium text-text-primary mb-1">
-                  Confirm Password <span className="text-red-500">*</span>
-                </label>
-                <Input
-                  type="password"
-                  placeholder="Repeat your password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                />
-              </div>
+              {/* Password fields */}
+              <Input
+                label="Create Password"
+                type="password"
+                leftIcon={<Lock className="w-3.5 h-3.5" />}
+                placeholder="At least 8 characters"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                helperText="Must be at least 8 characters"
+              />
 
-              <div className="pt-2">
-                <Button
-                  type="submit"
-                  variant="primary"
-                  className="w-full text-xs"
-                  isLoading={isSubmitting}
-                  rightIcon={<ArrowRight className="w-3.5 h-3.5" />}
-                >
-                  Join Agency Workspace
-                </Button>
-              </div>
+              <Input
+                label="Confirm Password"
+                type="password"
+                leftIcon={<Lock className="w-3.5 h-3.5" />}
+                placeholder="Re-enter your password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+              />
+
+              <Button
+                type="submit"
+                size="md"
+                className="w-full mt-2"
+                isLoading={isSubmitting}
+                rightIcon={<ArrowRight className="w-4 h-4" />}
+              >
+                Accept Invitation & Enter
+              </Button>
             </form>
           )}
         </div>
 
-        {/* Footer */}
-        <p className="text-center text-[11px] text-text-muted">
-          Already have an active login?{' '}
-          <Link to="/login" className="text-primary-600 hover:underline font-semibold">
-            Sign In
-          </Link>
-        </p>
+        <div className="flex items-center justify-center space-x-1.5 text-[11px] text-text-muted">
+          <Shield className="w-3.5 h-3.5 text-success-600" />
+          <span>Encrypted Session & Multi-Tenant Access Control</span>
+        </div>
       </div>
     </div>
   );

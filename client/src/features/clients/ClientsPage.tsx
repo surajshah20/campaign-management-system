@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiRequest } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../components/ui/Toast';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -47,6 +48,7 @@ interface ClientItem {
 export const ClientsPage: React.FC = () => {
   const navigate = useNavigate();
   const { currentAgency } = useAuth();
+  const { success, error: toastError } = useToast();
 
   const [clients, setClients] = useState<ClientItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -112,6 +114,7 @@ export const ClientsPage: React.FC = () => {
       });
 
       setIsModalOpen(false);
+      success('Client created', `${formData.name} was added to agency CRM.`);
       setFormData({
         name: '',
         industry: '',
@@ -124,7 +127,7 @@ export const ClientsPage: React.FC = () => {
       });
       await fetchClients();
     } catch (err: any) {
-      alert(err.message || 'Failed to create client.');
+      toastError(err.message || 'Failed to create client.');
     } finally {
       setIsSubmitting(false);
     }

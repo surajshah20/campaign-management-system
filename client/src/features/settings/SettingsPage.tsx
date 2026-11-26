@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../components/ui/Toast';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -8,6 +9,7 @@ import { ShieldCheck, Building2, Coins } from 'lucide-react';
 
 export const SettingsPage: React.FC = () => {
   const { currentAgency, refreshProfile } = useAuth();
+  const { success } = useToast();
 
   const [agencyName, setAgencyName] = useState(currentAgency?.name || '');
   const [currency, setCurrency] = useState(currentAgency?.currency || 'NPR');
@@ -21,6 +23,7 @@ export const SettingsPage: React.FC = () => {
       // In Phase 2 we provide immediate workspace configuration feedback
       await new Promise((r) => setTimeout(r, 400));
       setSaveSuccess(true);
+      success('Settings updated', 'Workspace preferences have been saved successfully.');
       setTimeout(() => setSaveSuccess(false), 3000);
       await refreshProfile();
     } finally {

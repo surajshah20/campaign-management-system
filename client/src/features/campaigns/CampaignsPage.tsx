@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiRequest } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../components/ui/Toast';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -45,6 +46,7 @@ interface CampaignItem {
 export const CampaignsPage: React.FC = () => {
   const navigate = useNavigate();
   const { currentAgency } = useAuth();
+  const { success, error: toastError } = useToast();
 
   const [campaigns, setCampaigns] = useState<CampaignItem[]>([]);
   const [clients, setClients] = useState<any[]>([]);
@@ -136,6 +138,7 @@ export const CampaignsPage: React.FC = () => {
       });
 
       setIsModalOpen(false);
+      success('Campaign initialized', `${formData.name} was successfully created.`);
       setFormData({
         clientId: clients[0]?.id || '',
         name: '',
@@ -151,7 +154,7 @@ export const CampaignsPage: React.FC = () => {
       });
       await fetchCampaigns();
     } catch (err: any) {
-      alert(err.message || 'Failed to create campaign.');
+      toastError(err.message || 'Failed to create campaign.');
     } finally {
       setIsSubmitting(false);
     }

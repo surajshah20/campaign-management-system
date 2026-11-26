@@ -9,126 +9,186 @@ import {
   BarChart3,
   LineChart,
   FileSpreadsheet,
-  Puzzle,
+  Layers,
   CreditCard,
   Users,
   Settings,
   ChevronLeft,
   ChevronRight,
-  ShieldCheck,
-  CheckCheck,
+  Shield,
+  CheckCircle2,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../context/AuthContext';
+import { BrandLogo, BrandSymbol } from '../brand/BrandLogo';
 
 interface SidebarProps {
   collapsed: boolean;
   onToggle: () => void;
 }
 
+interface NavGroup {
+  label: string;
+  items: {
+    label: string;
+    href: string;
+    icon: React.ElementType;
+    badge?: string;
+  }[];
+}
+
 export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
   const { currentAgency } = useAuth();
 
-  const navigationItems = [
-    { label: 'Overview', href: '/', icon: LayoutDashboard },
-    { label: 'Clients', href: '/clients', icon: Users2 },
-    { label: 'Campaigns', href: '/campaigns', icon: Megaphone },
-    { label: 'Content Calendar', href: '/content', icon: CalendarDays },
-    { label: 'Tasks', href: '/tasks', icon: CheckSquare },
-    { label: 'Client Approvals', href: '/portal', icon: CheckCheck },
-    { label: 'Advertising', href: '/advertising', icon: BarChart3 },
-    { label: 'Analytics', href: '/analytics', icon: LineChart },
-    { label: 'Reports', href: '/reports', icon: FileSpreadsheet },
-    { label: 'Integrations', href: '/integrations', icon: Puzzle },
-    { label: 'Billing & Plans', href: '/billing', icon: CreditCard },
-    { label: 'Team', href: '/team', icon: Users },
-    { label: 'Settings', href: '/settings', icon: Settings },
+  const navigationGroups: NavGroup[] = [
+    {
+      label: 'Workspace',
+      items: [
+        { label: 'Overview', href: '/', icon: LayoutDashboard },
+        { label: 'Clients', href: '/clients', icon: Users2 },
+      ],
+    },
+    {
+      label: 'Execution',
+      items: [
+        { label: 'Campaigns', href: '/campaigns', icon: Megaphone },
+        { label: 'Tasks', href: '/tasks', icon: CheckSquare },
+        { label: 'Content Calendar', href: '/content', icon: CalendarDays },
+        { label: 'Client Approvals', href: '/portal', icon: CheckCircle2 },
+      ],
+    },
+    {
+      label: 'Insights',
+      items: [
+        { label: 'Advertising', href: '/advertising', icon: BarChart3 },
+        { label: 'Analytics', href: '/analytics', icon: LineChart },
+        { label: 'Reports', href: '/reports', icon: FileSpreadsheet },
+      ],
+    },
+    {
+      label: 'Administration',
+      items: [
+        { label: 'Integrations', href: '/integrations', icon: Layers },
+        { label: 'Billing & Plans', href: '/billing', icon: CreditCard },
+        { label: 'Team', href: '/team', icon: Users },
+        { label: 'Settings', href: '/settings', icon: Settings },
+      ],
+    },
   ];
 
   return (
     <aside
       className={cn(
-        'relative flex flex-col border-r border-border bg-white transition-all duration-200 select-none z-20',
-        collapsed ? 'w-16' : 'w-60'
+        'relative flex flex-col border-r border-border bg-white transition-all duration-200 select-none z-20 shrink-0',
+        collapsed ? 'w-[64px]' : 'w-[240px]'
       )}
     >
       {/* Brand Header */}
-      <div className="flex h-14 items-center justify-between border-b border-border px-4">
+      <div className="flex h-14 items-center justify-between border-b border-border px-3.5">
         {!collapsed ? (
-          <div className="flex items-center space-x-2.5 overflow-hidden">
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-primary-600 text-white font-bold text-xs tracking-wider shadow-subtle">
-              AO
-            </div>
-            <div className="truncate">
-              <span className="text-xs font-bold tracking-tight text-text-primary block leading-none">
-                AGENCY OS
-              </span>
-              <span className="text-[10px] text-text-secondary block tracking-normal mt-0.5 truncate">
-                {currentAgency?.name || 'Workspace'}
-              </span>
-            </div>
+          <div className="flex items-center overflow-hidden">
+            <BrandLogo size="md" subtitle={currentAgency?.name || 'Workspace'} />
           </div>
         ) : (
-          <div className="mx-auto flex h-7 w-7 items-center justify-center rounded bg-primary-600 text-white font-bold text-xs shadow-subtle">
-            A
+          <div className="mx-auto">
+            <BrandSymbol size={26} />
           </div>
         )}
       </div>
 
-      {/* Nav List */}
-      <nav className="flex-1 space-y-0.5 overflow-y-auto p-2">
-        {navigationItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <NavLink
-              key={item.href}
-              to={item.href}
-              end={item.href === '/'}
-              className={({ isActive }) =>
-                cn(
-                  'flex items-center rounded-md px-2.5 py-2 text-xs font-medium transition-colors group',
-                  isActive
-                    ? 'bg-primary-50 text-primary-700 font-semibold'
-                    : 'text-text-secondary hover:bg-surface-subtle hover:text-text-primary',
-                  collapsed ? 'justify-center' : 'justify-start space-x-3'
-                )
-              }
-              title={collapsed ? item.label : undefined}
-            >
-              <Icon className="w-4 h-4 shrink-0 transition-transform group-hover:scale-105" />
-              {!collapsed && <span className="truncate">{item.label}</span>}
-            </NavLink>
-          );
-        })}
+      {/* Nav List with Grouping */}
+      <nav className="flex-1 overflow-y-auto px-2.5 py-3 space-y-4">
+        {navigationGroups.map((group) => (
+          <div key={group.label} className="space-y-0.5">
+            {!collapsed && (
+              <div className="px-2 pb-1 text-[10px] font-semibold tracking-wider text-text-muted uppercase">
+                {group.label}
+              </div>
+            )}
+            {group.items.map((item) => {
+              const Icon = item.icon;
+              return (
+                <NavLink
+                  key={item.href}
+                  to={item.href}
+                  end={item.href === '/'}
+                  className={({ isActive }) =>
+                    cn(
+                      'flex items-center rounded-md px-2.5 py-1.5 text-xs font-medium transition-all group relative',
+                      isActive
+                        ? 'bg-primary-50/80 text-primary-700 font-semibold'
+                        : 'text-text-secondary hover:bg-surface-subtle hover:text-text-primary',
+                      collapsed ? 'justify-center px-0' : 'justify-start space-x-2.5'
+                    )
+                  }
+                  title={collapsed ? item.label : undefined}
+                >
+                  {({ isActive }) => (
+                    <>
+                      {/* Active indicator bar */}
+                      {isActive && !collapsed && (
+                        <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r bg-primary-600" />
+                      )}
+                      <Icon
+                        className={cn(
+                          'w-4 h-4 shrink-0 transition-colors',
+                          isActive
+                            ? 'text-primary-600'
+                            : 'text-text-secondary group-hover:text-text-primary'
+                        )}
+                        strokeWidth={isActive ? 2 : 1.75}
+                      />
+                      {!collapsed && (
+                        <span className="truncate flex-1 tracking-tight">
+                          {item.label}
+                        </span>
+                      )}
+                      {!collapsed && item.badge && (
+                        <span className="ml-auto text-[10px] font-semibold px-1.5 py-0.2 rounded bg-primary-100 text-primary-700">
+                          {item.badge}
+                        </span>
+                      )}
+                    </>
+                  )}
+                </NavLink>
+              );
+            })}
+          </div>
+        ))}
       </nav>
 
       {/* Tenant Indicator & Collapse Control */}
-      <div className="border-t border-border p-3">
+      <div className="border-t border-border p-2.5 space-y-2 bg-[#FAFAFC]">
         {!collapsed && currentAgency && (
-          <div className="mb-2 rounded border border-border bg-slate-50/70 p-2">
-            <div className="flex items-center space-x-1.5 text-[10px] text-text-secondary">
-              <ShieldCheck className="w-3.5 h-3.5 text-success-600 shrink-0" />
-              <span className="truncate font-medium text-text-primary">
-                Role: {currentAgency.role.replace('AGENCY_', '')}
+          <div className="rounded border border-border/80 bg-white p-2 shadow-subtle">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-1.5 text-[11px] font-semibold text-text-primary truncate">
+                <Shield className="w-3.5 h-3.5 text-primary-600 shrink-0" />
+                <span className="truncate">
+                  {currentAgency.role.replace('AGENCY_', '')}
+                </span>
+              </div>
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-surface-subtle text-text-secondary border border-border">
+                {currentAgency.currency || 'NPR'}
               </span>
             </div>
-            <div className="text-[10px] text-text-secondary mt-0.5">
-              Currency: {currentAgency.currency || 'NPR'}
+            <div className="text-[10px] text-text-muted mt-1 truncate">
+              {currentAgency.name}
             </div>
           </div>
         )}
 
         <button
           onClick={onToggle}
-          className="flex w-full items-center justify-center rounded-md py-1.5 text-text-secondary hover:bg-surface-subtle hover:text-text-primary transition-colors text-xs"
+          className="flex w-full items-center justify-center rounded-md py-1.5 text-text-secondary hover:bg-white hover:text-text-primary hover:border hover:border-border transition-all text-xs"
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {collapsed ? (
             <ChevronRight className="w-4 h-4" />
           ) : (
-            <div className="flex items-center space-x-2">
-              <ChevronLeft className="w-4 h-4" />
-              <span className="text-[11px] font-medium">Collapse Sidebar</span>
+            <div className="flex items-center space-x-1.5">
+              <ChevronLeft className="w-3.5 h-3.5" />
+              <span className="text-[11px] font-medium">Collapse</span>
             </div>
           )}
         </button>

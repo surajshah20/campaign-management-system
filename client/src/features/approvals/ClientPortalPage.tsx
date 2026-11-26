@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { apiRequest } from '../../api/client';
+import { useToast } from '../../components/ui/Toast';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -36,6 +37,7 @@ interface PortalApprovalItem {
 }
 
 export const ClientPortalPage: React.FC = () => {
+  const { success, error: toastError } = useToast();
   const [approvals, setApprovals] = useState<PortalApprovalItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -77,9 +79,10 @@ export const ClientPortalPage: React.FC = () => {
 
       setSelectedApproval(null);
       setFeedbackText('');
+      success('Decision submitted', `Approval decision recorded as ${actionType}.`);
       await fetchPortalData();
     } catch (err: any) {
-      alert(err.message || 'Failed to submit approval decision.');
+      toastError(err.message || 'Failed to submit approval decision.');
     } finally {
       setIsSubmitting(false);
     }
@@ -99,25 +102,27 @@ export const ClientPortalPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Banner */}
-      <div className="rounded-lg border border-border bg-gradient-to-r from-slate-900 to-indigo-950 p-6 text-white shadow-subtle">
+      {/* Clean Enterprise Review Header */}
+      <div className="rounded-lg border border-border bg-white p-5 shadow-subtle">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center space-x-2 text-xs font-semibold text-indigo-300 mb-1">
-              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            <div className="flex items-center space-x-2 text-[11px] font-semibold text-text-secondary uppercase tracking-wider mb-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-success-600" />
               <span>Restricted Client Review Portal</span>
             </div>
-            <h1 className="text-xl font-bold tracking-tight text-white">
+            <h1 className="text-xl font-bold tracking-tight text-text-primary">
               Creative Sign-off & Content Review
             </h1>
-            <p className="text-xs text-slate-300 mt-1">
-              Review media drafts, inspect captions, and request revisions before campaigns go live.
+            <p className="text-xs text-text-secondary mt-1">
+              Review media drafts, inspect copywriting, and request revisions before campaigns publish live.
             </p>
           </div>
 
-          <div className="rounded-md bg-white/10 backdrop-blur-sm px-3.5 py-2 text-right">
-            <span className="text-[11px] text-indigo-200 block">Pending Sign-off</span>
-            <span className="text-xl font-bold text-white tabular-nums">
+          <div className="rounded-md border border-border bg-surface-subtle px-3.5 py-2 text-right shrink-0">
+            <span className="text-[10px] text-text-muted uppercase font-semibold block">
+              Pending Sign-off
+            </span>
+            <span className="text-xl font-bold text-text-primary tabular-nums">
               {pendingApprovals.length} Items
             </span>
           </div>

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { apiRequest } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../components/ui/Toast';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -50,6 +51,7 @@ const KANBAN_COLUMNS: {
 
 export const TasksPage: React.FC = () => {
   const { currentAgency } = useAuth();
+  const { success, error: toastError } = useToast();
 
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [clients, setClients] = useState<any[]>([]);
@@ -138,6 +140,7 @@ export const TasksPage: React.FC = () => {
       });
 
       setIsModalOpen(false);
+      success('Task created', `"${formData.title}" added to board.`);
       setFormData({
         title: '',
         description: '',
@@ -150,7 +153,7 @@ export const TasksPage: React.FC = () => {
       });
       await fetchTasks();
     } catch (err: any) {
-      alert(err.message || 'Failed to create task.');
+      toastError(err.message || 'Failed to create task.');
     } finally {
       setIsSubmitting(false);
     }
