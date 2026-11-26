@@ -361,27 +361,27 @@ export const TeamPage: React.FC = () => {
                     <div className="flex items-center space-x-2">
                       {getRoleBadge(inv.role)}
                       <Button
-                        size="sm"
+                        size="xs"
                         variant="outline"
-                        className="text-[11px] h-7 px-2.5 flex items-center space-x-1"
+                        leftIcon={
+                          copiedInviteId === inv.id ? (
+                            <Check className="w-3 h-3 text-success-600" />
+                          ) : (
+                            <Copy className="w-3 h-3 text-text-secondary" />
+                          )
+                        }
                         onClick={() => handleCopyInviteLink(inv.id)}
                       >
                         {copiedInviteId === inv.id ? (
-                          <>
-                            <Check className="w-3 h-3 text-success-600" />
-                            <span className="text-success-600 font-medium">Copied!</span>
-                          </>
+                          <span className="text-success-600 font-medium">Copied!</span>
                         ) : (
-                          <>
-                            <Copy className="w-3 h-3 text-text-secondary" />
-                            <span>Copy Link</span>
-                          </>
+                          'Copy Link'
                         )}
                       </Button>
                       <Button
-                        size="sm"
+                        size="xs"
                         variant="ghost"
-                        className="text-danger-600 hover:bg-danger-50 text-[11px] h-7 px-2"
+                        className="text-danger-600 hover:bg-danger-50 text-[11px]"
                         onClick={() => handleCancelInvite(inv.id)}
                       >
                         Revoke

@@ -26,7 +26,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const baseStyles =
-      'inline-flex items-center justify-center font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/20 focus-visible:border-primary-600 disabled:opacity-50 disabled:pointer-events-none rounded-md select-none active:scale-[0.98]';
+      'inline-flex items-center justify-center font-medium whitespace-nowrap shrink-0 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/20 focus-visible:border-primary-600 disabled:opacity-50 disabled:pointer-events-none rounded-md select-none active:scale-[0.98]';
 
     const sizeStyles = {
       xs: 'h-7 px-2 text-[11px] gap-1',
@@ -60,7 +60,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         ) : (
           leftIcon && <span className="inline-flex shrink-0">{leftIcon}</span>
         )}
-        {children && <span>{children}</span>}
+        {children && <span className="inline-flex items-center gap-1.5 whitespace-nowrap">{children}</span>}
         {!isLoading && rightIcon && (
           <span className="inline-flex shrink-0">{rightIcon}</span>
         )}
