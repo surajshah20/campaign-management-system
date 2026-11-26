@@ -5,16 +5,7 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { formatCurrency } from '../../lib/utils';
-import {
-  LineChart as LineChartIcon,
-  TrendingUp,
-  DollarSign,
-  Eye,
-  Target,
-  Layers,
-  BarChart2,
-  RefreshCw,
-} from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -124,7 +115,6 @@ export const AnalyticsPage: React.FC = () => {
     costPerConversion: 0,
   };
 
-  // Format timeseries dates for charts
   const formattedTimeseries = (data?.timeseries || []).map((t) => {
     const parts = t.date.split('-');
     const label = parts.length === 3 ? `${parts[1]}/${parts[2]}` : t.date;
@@ -136,29 +126,23 @@ export const AnalyticsPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
+      {/* 1. Header: Clean & Spacious */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-5">
         <div>
-          <div className="flex items-center space-x-2 text-xs font-semibold text-text-muted mb-1">
-            <span>PERFORMANCE INTELLIGENCE</span>
-            <span>/</span>
-            <span className="text-text-primary">CROSS-PLATFORM ANALYTICS</span>
-          </div>
           <h1 className="text-xl font-bold tracking-tight text-text-primary">
-            Advertising & Campaign Analytics
+            Cross-Platform Analytics
           </h1>
           <p className="text-xs text-text-secondary mt-0.5">
-            Full-funnel attribution, ROAS tracking, and cross-channel efficiency matrix.
+            Performance attribution, ROAS tracking, and channel efficiency metrics.
           </p>
         </div>
 
-        {/* Filters Controls */}
+        {/* Clean Unified Toolbar */}
         <div className="flex flex-wrap items-center gap-2">
-          {/* Platform Filter */}
           <select
             value={platform}
             onChange={(e) => setPlatform(e.target.value)}
-            className="rounded-md border border-border bg-white px-2.5 py-1 text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-primary-500 shadow-2xs"
+            className="h-8 rounded-md border border-border bg-white px-2.5 text-xs text-text-primary focus:outline-none focus:border-primary-600 shadow-subtle"
           >
             <option value="ALL">All Platforms</option>
             <option value="META_ADS">Meta Ads</option>
@@ -167,13 +151,12 @@ export const AnalyticsPage: React.FC = () => {
             <option value="LINKEDIN_ADS">LinkedIn Ads</option>
           </select>
 
-          {/* Time Window Buttons */}
-          <div className="inline-flex rounded-md border border-border bg-white p-0.5 text-xs font-medium shadow-2xs">
+          <div className="inline-flex rounded-md border border-border bg-white p-0.5 text-xs font-medium shadow-subtle">
             {[7, 14, 30, 90].map((d) => (
               <button
                 key={d}
                 onClick={() => setDays(d)}
-                className={`px-2.5 py-1 rounded transition-colors ${
+                className={`px-2.5 py-1 rounded transition-colors text-xs ${
                   days === d
                     ? 'bg-slate-900 text-white font-semibold'
                     : 'text-text-secondary hover:text-text-primary hover:bg-slate-50'
@@ -185,167 +168,121 @@ export const AnalyticsPage: React.FC = () => {
           </div>
 
           <Button
-            size="sm"
+            size="xs"
             variant="outline"
-            className="h-7 text-xs"
             onClick={fetchAnalytics}
-            leftIcon={<RefreshCw className="w-3 h-3" />}
+            leftIcon={<RefreshCw className="w-3 h-3 text-text-muted" />}
           >
             Refresh
           </Button>
         </div>
       </div>
 
-      {/* Error Notification */}
+      {/* Error Banner */}
       {errorMsg && (
-        <div className="flex items-center justify-between rounded-md border border-red-200 bg-red-50/70 p-3 text-xs text-red-800">
+        <div className="flex items-center justify-between rounded-md border border-danger-200 bg-danger-50 p-3 text-xs text-danger-700">
           <span>{errorMsg}</span>
           <button
             onClick={() => setErrorMsg(null)}
-            className="text-xs font-medium text-red-600 hover:text-red-900"
+            className="text-xs font-medium text-danger-700 underline"
           >
             Dismiss
           </button>
         </div>
       )}
 
-      {/* Loading Skeleton */}
       {isLoading ? (
         <div className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-28 w-full" />
+              <Skeleton key={i} className="h-24 w-full" />
             ))}
           </div>
-          <Skeleton className="h-80 w-full" />
+          <Skeleton className="h-72 w-full" />
         </div>
       ) : (
         <>
-          {/* Executive KPI Grid */}
+          {/* 2. Simplified Consistent KPI Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Total Spend */}
+            {/* Total Media Spend */}
             <Card className="p-4 bg-white border border-border shadow-subtle">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-text-secondary">Total Media Spend</span>
-                <div className="p-1.5 rounded-md bg-slate-100 text-slate-700">
-                  <DollarSign className="w-4 h-4" />
-                </div>
+              <span className="text-[11px] font-semibold text-text-secondary uppercase tracking-wider block">
+                Total Media Spend
+              </span>
+              <div className="mt-2 text-2xl font-bold tracking-tight text-text-primary tabular-nums">
+                {formatCurrency(summary.totalSpend, currency)}
               </div>
-              <div className="mt-2">
-                <span className="text-2xl font-bold tracking-tight text-text-primary tabular-nums">
-                  {formatCurrency(summary.totalSpend, currency)}
-                </span>
-              </div>
-              <div className="mt-2 flex items-center justify-between text-[11px] text-text-muted">
-                <span>In past {days} days</span>
-                <span className="font-medium text-text-secondary">
-                  CPM: {formatCurrency(summary.overallCpm, currency)}
-                </span>
-              </div>
+              <p className="mt-2 text-xs text-text-secondary pt-2 border-t border-border/60">
+                Window: <span className="font-semibold text-text-primary">Past {days} days</span>
+              </p>
             </Card>
 
             {/* Attributed Revenue & ROAS */}
             <Card className="p-4 bg-white border border-border shadow-subtle">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-text-secondary">Attributed Revenue</span>
-                <div className="p-1.5 rounded-md bg-emerald-50 text-emerald-700">
-                  <TrendingUp className="w-4 h-4" />
-                </div>
+              <span className="text-[11px] font-semibold text-text-secondary uppercase tracking-wider block">
+                Attributed Revenue
+              </span>
+              <div className="mt-2 text-2xl font-bold tracking-tight text-success-600 tabular-nums">
+                {formatCurrency(summary.totalRevenue, currency)}
               </div>
-              <div className="mt-2 flex items-baseline justify-between">
-                <span className="text-2xl font-bold tracking-tight text-emerald-600 tabular-nums">
-                  {formatCurrency(summary.totalRevenue, currency)}
-                </span>
-                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                  {summary.overallRoas}x ROAS
-                </span>
-              </div>
-              <div className="mt-2 flex items-center justify-between text-[11px] text-text-muted">
-                <span>Gross Return on Ad Spend</span>
-                <span className="font-semibold text-emerald-700">Verified</span>
-              </div>
+              <p className="mt-2 text-xs text-text-secondary pt-2 border-t border-border/60">
+                Blended Return: <span className="font-semibold text-success-600">{summary.overallRoas}x ROAS</span>
+              </p>
             </Card>
 
-            {/* Total Impressions & Reach */}
+            {/* Total Impressions */}
             <Card className="p-4 bg-white border border-border shadow-subtle">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-text-secondary">Impressions & Reach</span>
-                <div className="p-1.5 rounded-md bg-blue-50 text-blue-700">
-                  <Eye className="w-4 h-4" />
-                </div>
+              <span className="text-[11px] font-semibold text-text-secondary uppercase tracking-wider block">
+                Total Impressions
+              </span>
+              <div className="mt-2 text-2xl font-bold tracking-tight text-text-primary tabular-nums">
+                {summary.totalImpressions.toLocaleString()}
               </div>
-              <div className="mt-2">
-                <span className="text-2xl font-bold tracking-tight text-text-primary tabular-nums">
-                  {summary.totalImpressions.toLocaleString()}
-                </span>
-              </div>
-              <div className="mt-2 flex items-center justify-between text-[11px] text-text-muted">
-                <span>Unique Reach: {summary.totalReach.toLocaleString()}</span>
-                <span className="font-medium text-text-secondary">
-                  Freq:{' '}
-                  {summary.totalReach > 0
-                    ? (summary.totalImpressions / summary.totalReach).toFixed(1)
-                    : '1.0'}
-                  x
-                </span>
-              </div>
+              <p className="mt-2 text-xs text-text-secondary pt-2 border-t border-border/60">
+                Unique Reach: <span className="font-semibold text-text-primary">{summary.totalReach.toLocaleString()}</span>
+              </p>
             </Card>
 
             {/* Clicks & Conversions */}
             <Card className="p-4 bg-white border border-border shadow-subtle">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-text-secondary">
-                  Clicks & Conversions
-                </span>
-                <div className="p-1.5 rounded-md bg-purple-50 text-purple-700">
-                  <Target className="w-4 h-4" />
-                </div>
+              <span className="text-[11px] font-semibold text-text-secondary uppercase tracking-wider block">
+                Link Clicks
+              </span>
+              <div className="mt-2 text-2xl font-bold tracking-tight text-text-primary tabular-nums">
+                {summary.totalClicks.toLocaleString()}
               </div>
-              <div className="mt-2 flex items-baseline justify-between">
-                <span className="text-2xl font-bold tracking-tight text-text-primary tabular-nums">
-                  {summary.totalClicks.toLocaleString()}
-                </span>
-                <span className="text-xs font-semibold text-text-secondary">
-                  {summary.overallCtr}% CTR
-                </span>
-              </div>
-              <div className="mt-2 flex items-center justify-between text-[11px] text-text-muted">
-                <span>{summary.totalConversions} Conversions</span>
-                <span className="font-medium text-text-secondary">
-                  CPA: {formatCurrency(summary.costPerConversion, currency)}
-                </span>
-              </div>
+              <p className="mt-2 text-xs text-text-secondary pt-2 border-t border-border/60">
+                CTR: <span className="font-semibold text-text-primary">{summary.overallCtr}%</span> • {summary.totalConversions} conv
+              </p>
             </Card>
           </div>
 
-          {/* Visualization 1: Spend vs Revenue Trend AreaChart */}
+          {/* 3. Spend vs Revenue Trajectory AreaChart */}
           <Card className="p-5 bg-white border border-border shadow-subtle">
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-border">
               <div>
-                <h3 className="text-sm font-semibold text-text-primary flex items-center space-x-2">
-                  <LineChartIcon className="w-4 h-4 text-primary-600" />
-                  <span>Revenue & Spend Trajectory</span>
+                <h3 className="text-sm font-semibold text-text-primary">
+                  Revenue & Spend Trajectory
                 </h3>
                 <p className="text-xs text-text-secondary mt-0.5">
-                  Daily financial performance and return velocity over the selected window.
+                  Daily financial performance and return velocity over the selected {days}-day window.
                 </p>
               </div>
               <div className="flex items-center space-x-4 text-xs font-medium">
                 <span className="flex items-center space-x-1.5">
-                  <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                  <span>Revenue ({currency})</span>
+                  <span className="h-2 w-2 rounded-full bg-success-600" />
+                  <span className="text-text-secondary">Revenue</span>
                 </span>
                 <span className="flex items-center space-x-1.5">
-                  <span className="h-2.5 w-2.5 rounded-full bg-primary-600" />
-                  <span>Ad Spend ({currency})</span>
+                  <span className="h-2 w-2 rounded-full bg-primary-600" />
+                  <span className="text-text-secondary">Spend</span>
                 </span>
               </div>
             </div>
 
             {formattedTimeseries.length === 0 ? (
               <div className="py-16 text-center text-xs text-text-secondary">
-                No timeseries records found in this window. Log ad metrics or import CSV records in
-                Advertising Management.
+                No timeseries telemetry recorded in this date range.
               </div>
             ) : (
               <div className="h-72 w-full">
@@ -356,24 +293,24 @@ export const AnalyticsPage: React.FC = () => {
                   >
                     <defs>
                       <linearGradient id="spendGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.25} />
-                        <stop offset="95%" stopColor="#4f46e5" stopOpacity={0.0} />
+                        <stop offset="5%" stopColor="#5145E8" stopOpacity={0.2} />
+                        <stop offset="95%" stopColor="#5145E8" stopOpacity={0.0} />
                       </linearGradient>
                       <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
+                        <stop offset="5%" stopColor="#16835D" stopOpacity={0.25} />
+                        <stop offset="95%" stopColor="#16835D" stopOpacity={0.0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E4E7EC" />
                     <XAxis
                       dataKey="dateLabel"
-                      tick={{ fontSize: 11, fill: '#64748b' }}
-                      axisLine={{ stroke: '#e2e8f0' }}
+                      tick={{ fontSize: 11, fill: '#667085' }}
+                      axisLine={{ stroke: '#E4E7EC' }}
                       tickLine={false}
                     />
                     <YAxis
-                      tick={{ fontSize: 11, fill: '#64748b' }}
-                      axisLine={{ stroke: '#e2e8f0' }}
+                      tick={{ fontSize: 11, fill: '#667085' }}
+                      axisLine={false}
                       tickLine={false}
                       tickFormatter={(val) =>
                         val >= 1000 ? `${(val / 1000).toFixed(0)}k` : `${val}`
@@ -381,11 +318,11 @@ export const AnalyticsPage: React.FC = () => {
                     />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: '#ffffff',
-                        borderColor: '#e2e8f0',
-                        borderRadius: '0.375rem',
+                        backgroundColor: '#FFFFFF',
+                        borderColor: '#E4E7EC',
+                        borderRadius: '8px',
                         fontSize: '12px',
-                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                        boxShadow: '0 4px 16px -2px rgba(16, 24, 40, 0.08)',
                       }}
                       formatter={(value: any, name: any) => [
                         formatCurrency(Number(value), currency),
@@ -395,7 +332,7 @@ export const AnalyticsPage: React.FC = () => {
                     <Area
                       type="monotone"
                       dataKey="revenue"
-                      stroke="#10b981"
+                      stroke="#16835D"
                       strokeWidth={2}
                       fillOpacity={1}
                       fill="url(#revGrad)"
@@ -403,7 +340,7 @@ export const AnalyticsPage: React.FC = () => {
                     <Area
                       type="monotone"
                       dataKey="spend"
-                      stroke="#4f46e5"
+                      stroke="#5145E8"
                       strokeWidth={2}
                       fillOpacity={1}
                       fill="url(#spendGrad)"
@@ -414,16 +351,19 @@ export const AnalyticsPage: React.FC = () => {
             )}
           </Card>
 
-          {/* Visualization 2 & Platform Matrix Row */}
+          {/* 4. Second Row: Impressions & Platform Channel Efficiency */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Impressions & Clicks BarChart */}
+            {/* Daily Volume BarChart */}
             <Card className="p-5 bg-white border border-border shadow-subtle">
               <div className="flex items-center justify-between mb-4 pb-3 border-b border-border">
-                <h3 className="text-sm font-semibold text-text-primary flex items-center space-x-2">
-                  <BarChart2 className="w-4 h-4 text-primary-600" />
-                  <span>Impressions vs. Link Clicks</span>
-                </h3>
-                <span className="text-xs text-text-muted">Daily volume</span>
+                <div>
+                  <h3 className="text-sm font-semibold text-text-primary">
+                    Daily Traffic Volume
+                  </h3>
+                  <p className="text-xs text-text-secondary mt-0.5">
+                    Impressions and click distributions across dates.
+                  </p>
+                </div>
               </div>
 
               {formattedTimeseries.length === 0 ? (
@@ -431,22 +371,22 @@ export const AnalyticsPage: React.FC = () => {
                   No impression data recorded.
                 </div>
               ) : (
-                <div className="h-64 w-full">
+                <div className="h-60 w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                       data={formattedTimeseries}
                       margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
                     >
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E4E7EC" />
                       <XAxis
                         dataKey="dateLabel"
-                        tick={{ fontSize: 11, fill: '#64748b' }}
-                        axisLine={{ stroke: '#e2e8f0' }}
+                        tick={{ fontSize: 11, fill: '#667085' }}
+                        axisLine={{ stroke: '#E4E7EC' }}
                         tickLine={false}
                       />
                       <YAxis
-                        tick={{ fontSize: 11, fill: '#64748b' }}
-                        axisLine={{ stroke: '#e2e8f0' }}
+                        tick={{ fontSize: 11, fill: '#667085' }}
+                        axisLine={false}
                         tickLine={false}
                         tickFormatter={(val) =>
                           val >= 1000 ? `${(val / 1000).toFixed(0)}k` : `${val}`
@@ -454,19 +394,24 @@ export const AnalyticsPage: React.FC = () => {
                       />
                       <Tooltip
                         contentStyle={{
-                          backgroundColor: '#ffffff',
-                          borderColor: '#e2e8f0',
-                          borderRadius: '0.375rem',
+                          backgroundColor: '#FFFFFF',
+                          borderColor: '#E4E7EC',
+                          borderRadius: '8px',
                           fontSize: '12px',
                         }}
                       />
                       <Bar
                         dataKey="impressions"
                         name="Impressions"
-                        fill="#93c5fd"
-                        radius={[2, 2, 0, 0]}
+                        fill="#BDB4FE"
+                        radius={[3, 3, 0, 0]}
                       />
-                      <Bar dataKey="clicks" name="Clicks" fill="#4f46e5" radius={[2, 2, 0, 0]} />
+                      <Bar
+                        dataKey="clicks"
+                        name="Clicks"
+                        fill="#5145E8"
+                        radius={[3, 3, 0, 0]}
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -474,64 +419,68 @@ export const AnalyticsPage: React.FC = () => {
             </Card>
 
             {/* Platform Comparison Matrix */}
-            <Card className="p-5 bg-white border border-border shadow-subtle">
-              <div className="flex items-center justify-between mb-4 pb-3 border-b border-border">
-                <h3 className="text-sm font-semibold text-text-primary flex items-center space-x-2">
-                  <Layers className="w-4 h-4 text-primary-600" />
-                  <span>Channel Efficiency Breakdown</span>
-                </h3>
-                <span className="text-xs text-text-muted">Meta vs Google vs TikTok</span>
-              </div>
+            <Card className="p-5 bg-white border border-border shadow-subtle flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-4 pb-3 border-b border-border">
+                  <div>
+                    <h3 className="text-sm font-semibold text-text-primary">
+                      Channel Efficiency Matrix
+                    </h3>
+                    <p className="text-xs text-text-secondary mt-0.5">
+                      Spend and ROAS performance by ad network.
+                    </p>
+                  </div>
+                </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="border-b border-border text-[11px] font-semibold text-text-secondary uppercase">
-                      <th className="py-2.5 px-3">Network</th>
-                      <th className="py-2.5 px-3">Spend</th>
-                      <th className="py-2.5 px-3">Clicks / CTR</th>
-                      <th className="py-2.5 px-3">Revenue</th>
-                      <th className="py-2.5 px-3 text-right">ROAS</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {(data?.platformComparison || []).map((row) => (
-                      <tr key={row.platform} className="hover:bg-slate-50/70 transition-colors">
-                        <td className="py-2.5 px-3 font-semibold text-text-primary">
-                          {PLATFORM_LABELS[row.platform] || row.platform}
-                        </td>
-                        <td className="py-2.5 px-3 tabular-nums font-medium">
-                          {formatCurrency(row.spend, currency)}
-                        </td>
-                        <td className="py-2.5 px-3 tabular-nums text-text-secondary">
-                          {row.clicks.toLocaleString()}{' '}
-                          <span className="text-[10px] text-text-muted">({row.ctr}%)</span>
-                        </td>
-                        <td className="py-2.5 px-3 tabular-nums font-medium text-emerald-700">
-                          {formatCurrency(row.revenue, currency)}
-                        </td>
-                        <td className="py-2.5 px-3 text-right tabular-nums">
-                          <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${
-                              row.roas >= 3.0
-                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                : row.roas >= 1.5
-                                ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                                : 'bg-slate-100 text-slate-700 border border-slate-200'
-                            }`}
-                          >
-                            {row.roas}x
-                          </span>
-                        </td>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="border-b border-border text-[10px] font-semibold text-text-muted uppercase">
+                        <th className="py-2.5 px-3">Network</th>
+                        <th className="py-2.5 px-3">Spend</th>
+                        <th className="py-2.5 px-3">Clicks</th>
+                        <th className="py-2.5 px-3">Revenue</th>
+                        <th className="py-2.5 px-3 text-right">ROAS</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {(data?.platformComparison || []).map((row) => (
+                        <tr key={row.platform} className="hover:bg-slate-50 transition-colors">
+                          <td className="py-2.5 px-3 font-semibold text-text-primary">
+                            {PLATFORM_LABELS[row.platform] || row.platform}
+                          </td>
+                          <td className="py-2.5 px-3 tabular-nums font-medium">
+                            {formatCurrency(row.spend, currency)}
+                          </td>
+                          <td className="py-2.5 px-3 tabular-nums text-text-secondary">
+                            {row.clicks.toLocaleString()}{' '}
+                            <span className="text-[10px] text-text-muted">({row.ctr}%)</span>
+                          </td>
+                          <td className="py-2.5 px-3 tabular-nums font-medium text-success-600">
+                            {formatCurrency(row.revenue, currency)}
+                          </td>
+                          <td className="py-2.5 px-3 text-right tabular-nums">
+                            <span
+                              className={`font-semibold ${
+                                row.roas >= 3.0
+                                  ? 'text-success-600'
+                                  : row.roas >= 1.5
+                                  ? 'text-warning-600'
+                                  : 'text-text-secondary'
+                              }`}
+                            >
+                              {row.roas}x
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
 
-              <div className="mt-4 rounded-md border border-border bg-slate-50/75 p-3 text-[11px] text-text-secondary leading-relaxed">
-                ROAS metrics are derived from verified client purchase value / platform media spend.
-                Target benchmark is <strong>&gt; 3.0x</strong> for high-converting funnels.
+              <div className="mt-4 pt-3 border-t border-border text-[11px] text-text-muted">
+                Calculated directly from verified media receipts and client transactions.
               </div>
             </Card>
           </div>

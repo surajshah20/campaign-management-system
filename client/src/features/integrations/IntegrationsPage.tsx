@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { apiRequest } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../components/ui/Toast';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -57,6 +58,7 @@ interface SyncLogItem {
 
 export const IntegrationsPage: React.FC = () => {
   const { currentAgency } = useAuth();
+  const { success, error: toastError, info } = useToast();
 
   const [integrations, setIntegrations] = useState<IntegrationCatalogItem[]>([]);
   const [syncLogs, setSyncLogs] = useState<SyncLogItem[]>([]);
@@ -121,11 +123,11 @@ export const IntegrationsPage: React.FC = () => {
         }),
       });
 
-      setSuccessMsg(`${selectedIntegration.name} connected and verified.`);
+      success('Integration connected', `${selectedIntegration.name} credentials verified.`);
       setIsConfigModalOpen(false);
       fetchIntegrations();
     } catch (err: any) {
-      alert(err.message || 'Failed to configure integration');
+      toastError(err.message || 'Failed to configure integration');
     } finally {
       setIsSubmitting(false);
     }
@@ -138,10 +140,10 @@ export const IntegrationsPage: React.FC = () => {
       await apiRequest(`/api/v1/integrations/disconnect/${provider}`, {
         method: 'DELETE',
       });
-      setSuccessMsg(`Disconnected ${provider}.`);
+      info('Integration disconnected', `Removed connection for ${provider}.`);
       fetchIntegrations();
     } catch (err: any) {
-      alert(err.message || 'Failed to disconnect integration');
+      toastError(err.message || 'Failed to disconnect integration');
     }
   };
 
@@ -156,12 +158,13 @@ export const IntegrationsPage: React.FC = () => {
         }
       );
 
-      setSuccessMsg(
-        `Synchronized ${provider}: Ingested ${res.recordsProcessed} campaign metric sets.`
+      success(
+        'Sync complete',
+        `Ingested ${res.recordsProcessed} metric records from ${provider}.`
       );
       fetchIntegrations();
     } catch (err: any) {
-      alert(err.message || `Failed to sync ${provider}`);
+      toastError(err.message || `Failed to sync ${provider}`);
     } finally {
       setSyncingProvider(null);
     }
@@ -172,18 +175,13 @@ export const IntegrationsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-border">
         <div>
-          <div className="flex items-center space-x-2 text-xs font-semibold text-text-muted mb-1">
-            <span>PLATFORM CONNECTORS</span>
-            <span>/</span>
-            <span className="text-text-primary">INTEGRATIONS & STORAGE</span>
-          </div>
           <h1 className="text-xl font-bold tracking-tight text-text-primary">
-            Third-Party Integrations & Storage
+            Integrations & Cloud Storage
           </h1>
           <p className="text-xs text-text-secondary mt-0.5">
-            Connect Meta Marketing API, Google Ads API, TikTok Ads, and cloud asset storage adapters.
+            Connect Meta Marketing API, Google Ads, TikTok Ads, and cloud asset storage adapters.
           </p>
         </div>
 

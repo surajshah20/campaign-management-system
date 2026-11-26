@@ -8,7 +8,6 @@ import { Button } from '../../components/ui/Button';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { formatCurrency, formatDate } from '../../lib/utils';
 import {
-  Users2,
   Megaphone,
   Clock,
   Plus,
@@ -16,7 +15,6 @@ import {
   Activity,
   Layers,
   AlertTriangle,
-  Wallet,
   RefreshCw,
 } from 'lucide-react';
 import {
@@ -197,7 +195,7 @@ export const OverviewPage: React.FC = () => {
         </div>
       </div>
 
-      {/* KPI Section */}
+      {/* KPI Section — Simplified & Focused */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Active Clients */}
         <Card
@@ -205,31 +203,15 @@ export const OverviewPage: React.FC = () => {
           onClick={() => navigate('/clients')}
           className="p-4 bg-white border border-border shadow-subtle group"
         >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-text-secondary uppercase tracking-wider">
-              Active Clients
-            </span>
-            <div className="rounded-md p-1.5 bg-surface-subtle text-text-secondary group-hover:bg-primary-50 group-hover:text-primary-600 transition-colors">
-              <Users2 className="w-4 h-4" />
-            </div>
+          <span className="text-[11px] font-semibold text-text-secondary uppercase tracking-wider block">
+            Active Clients
+          </span>
+          <div className="mt-2 text-2xl font-bold tracking-tight text-text-primary tabular-nums">
+            {metrics.activeClients}
           </div>
-          <div className="mt-2.5 flex items-baseline space-x-2">
-            <span className="text-2xl font-bold tracking-tight text-text-primary tabular-nums">
-              {metrics.activeClients}
-            </span>
-            <span className="text-xs text-text-muted">
-              of {metrics.totalClients} accounts
-            </span>
-          </div>
-          <div className="mt-2 flex items-center justify-between text-[11px] text-text-secondary pt-2 border-t border-border/60">
-            <span className="text-success-600 font-medium flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-success-600 inline-block" />
-              100% operational
-            </span>
-            <span className="text-primary-600 group-hover:underline text-[10px] font-medium flex items-center">
-              View CRM <ArrowUpRight className="w-3 h-3 ml-0.5" />
-            </span>
-          </div>
+          <p className="mt-2 text-xs text-text-secondary pt-2 border-t border-border/60">
+            Total Accounts: <span className="font-semibold text-text-primary">{metrics.totalClients}</span>
+          </p>
         </Card>
 
         {/* Active Campaigns */}
@@ -238,28 +220,15 @@ export const OverviewPage: React.FC = () => {
           onClick={() => navigate('/campaigns')}
           className="p-4 bg-white border border-border shadow-subtle group"
         >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-text-secondary uppercase tracking-wider">
-              Active Campaigns
-            </span>
-            <div className="rounded-md p-1.5 bg-surface-subtle text-text-secondary group-hover:bg-primary-50 group-hover:text-primary-600 transition-colors">
-              <Megaphone className="w-4 h-4" />
-            </div>
+          <span className="text-[11px] font-semibold text-text-secondary uppercase tracking-wider block">
+            Active Campaigns
+          </span>
+          <div className="mt-2 text-2xl font-bold tracking-tight text-text-primary tabular-nums">
+            {metrics.activeCampaigns}
           </div>
-          <div className="mt-2.5 flex items-baseline space-x-2">
-            <span className="text-2xl font-bold tracking-tight text-text-primary tabular-nums">
-              {metrics.activeCampaigns}
-            </span>
-            <span className="text-xs text-text-muted">
-              running now
-            </span>
-          </div>
-          <div className="mt-2 flex items-center justify-between text-[11px] text-text-secondary pt-2 border-t border-border/60">
-            <span>{metrics.completedCampaigns} completed campaigns</span>
-            <span className="text-primary-600 group-hover:underline text-[10px] font-medium flex items-center">
-              Campaigns <ArrowUpRight className="w-3 h-3 ml-0.5" />
-            </span>
-          </div>
+          <p className="mt-2 text-xs text-text-secondary pt-2 border-t border-border/60">
+            Completed: <span className="font-semibold text-text-primary">{metrics.completedCampaigns}</span>
+          </p>
         </Card>
 
         {/* Pending Client Approvals */}
@@ -268,55 +237,32 @@ export const OverviewPage: React.FC = () => {
           onClick={() => navigate('/portal')}
           className="p-4 bg-white border border-border shadow-subtle group"
         >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-text-secondary uppercase tracking-wider">
-              Client Approvals
-            </span>
-            <div className="rounded-md p-1.5 bg-surface-subtle text-text-secondary group-hover:bg-warning-50 group-hover:text-warning-600 transition-colors">
-              <Clock className="w-4 h-4" />
-            </div>
+          <span className="text-[11px] font-semibold text-text-secondary uppercase tracking-wider block">
+            Client Approvals
+          </span>
+          <div className="mt-2 text-2xl font-bold tracking-tight text-warning-600 tabular-nums">
+            {metrics.pendingApprovalsCount}
           </div>
-          <div className="mt-2.5 flex items-baseline space-x-2">
-            <span className="text-2xl font-bold tracking-tight text-text-primary tabular-nums">
-              {metrics.pendingApprovalsCount}
-            </span>
-            <span className="text-xs text-warning-600 font-medium">
-              awaiting sign-off
-            </span>
-          </div>
-          <div className="mt-2 flex items-center justify-between text-[11px] text-text-secondary pt-2 border-t border-border/60">
-            <span className="text-text-muted">Client portal queue</span>
-            <span className="text-primary-600 group-hover:underline text-[10px] font-medium flex items-center">
-              Review queue <ArrowUpRight className="w-3 h-3 ml-0.5" />
-            </span>
-          </div>
+          <p className="mt-2 text-xs text-text-secondary pt-2 border-t border-border/60">
+            Status: <span className="font-semibold text-warning-600">Awaiting Client Sign-off</span>
+          </p>
         </Card>
 
-        {/* Advertising Spend & Budget */}
+        {/* Advertising Spend */}
         <Card
           hoverable
           onClick={() => navigate('/advertising')}
           className="p-4 bg-white border border-border shadow-subtle group"
         >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-text-secondary uppercase tracking-wider">
-              Advertising Spend
-            </span>
-            <div className="rounded-md p-1.5 bg-surface-subtle text-text-secondary group-hover:bg-success-50 group-hover:text-success-600 transition-colors">
-              <Wallet className="w-4 h-4" />
-            </div>
+          <span className="text-[11px] font-semibold text-text-secondary uppercase tracking-wider block">
+            Advertising Spend
+          </span>
+          <div className="mt-2 text-2xl font-bold tracking-tight text-text-primary tabular-nums">
+            {formatCurrency(metrics.totalAdSpend, currency)}
           </div>
-          <div className="mt-2.5 flex items-baseline space-x-2">
-            <span className="text-xl font-bold tracking-tight text-text-primary tabular-nums">
-              {formatCurrency(metrics.totalAdSpend, currency)}
-            </span>
-          </div>
-          <div className="mt-2 flex items-center justify-between text-[11px] text-text-secondary pt-2 border-t border-border/60">
-            <span>{budgetUtilization}% of budget</span>
-            <span className="font-semibold text-text-primary tabular-nums">
-              Bal: {formatCurrency(metrics.remainingBudget, currency)}
-            </span>
-          </div>
+          <p className="mt-2 text-xs text-text-secondary pt-2 border-t border-border/60">
+            Remaining: <span className="font-semibold text-text-primary">{formatCurrency(metrics.remainingBudget, currency)}</span> ({budgetUtilization}% spent)
+          </p>
         </Card>
       </div>
 

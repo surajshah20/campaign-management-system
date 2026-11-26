@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { apiRequest } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../components/ui/Toast';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -55,6 +56,7 @@ interface CampaignOption {
 
 export const ReportsPage: React.FC = () => {
   const { currentAgency } = useAuth();
+  const { success, error: toastError, info } = useToast();
 
   const [reports, setReports] = useState<ReportItem[]>([]);
   const [clients, setClients] = useState<ClientOption[]>([]);
@@ -121,7 +123,7 @@ export const ReportsPage: React.FC = () => {
   const handleGenerateReport = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.clientId || !formData.title.trim()) {
-      alert('Please select a client and provide a report title.');
+      toastError('Please select a client and provide a report title.');
       return;
     }
 
@@ -135,6 +137,7 @@ export const ReportsPage: React.FC = () => {
         }),
       });
 
+      success('Report generated', `${formData.title} was created.`);
       setIsGenerateModalOpen(false);
       setFormData({
         clientId: '',
@@ -146,7 +149,7 @@ export const ReportsPage: React.FC = () => {
       });
       fetchReportsData();
     } catch (err: any) {
-      alert(err.message || 'Failed to generate client report');
+      toastError(err.message || 'Failed to generate client report');
     } finally {
       setIsSubmitting(false);
     }
@@ -164,8 +167,12 @@ export const ReportsPage: React.FC = () => {
       setReports((prev) =>
         prev.map((r) => (r.id === report.id ? { ...r, isPubliclyShared: updated.isPubliclyShared } : r))
       );
+      info(
+        updated.isPubliclyShared ? 'Public link enabled' : 'Public link disabled',
+        'Share permissions updated.'
+      );
     } catch (err: any) {
-      alert(err.message || 'Failed to update share settings');
+      toastError(err.message || 'Failed to update share settings');
     }
   };
 
@@ -177,8 +184,9 @@ export const ReportsPage: React.FC = () => {
         method: 'DELETE',
       });
       setReports((prev) => prev.filter((r) => r.id !== reportId));
+      info('Report deleted');
     } catch (err: any) {
-      alert(err.message || 'Failed to delete report');
+      toastError(err.message || 'Failed to delete report');
     }
   };
 
@@ -186,6 +194,7 @@ export const ReportsPage: React.FC = () => {
     const fullUrl = `${window.location.origin}/reports/share/${shareToken}`;
     navigator.clipboard.writeText(fullUrl);
     setCopiedToken(shareToken);
+    success('Link copied', 'Client presentation link copied to clipboard.');
     setTimeout(() => setCopiedToken(null), 2500);
   };
 
@@ -207,18 +216,13 @@ export const ReportsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-5">
         <div>
-          <div className="flex items-center space-x-2 text-xs font-semibold text-text-muted mb-1">
-            <span>CLIENT REPORTING</span>
-            <span>/</span>
-            <span className="text-text-primary">PRESENTATIONS & AUDITS</span>
-          </div>
           <h1 className="text-xl font-bold tracking-tight text-text-primary">
             Client Reports & Presentations
           </h1>
           <p className="text-xs text-text-secondary mt-0.5">
-            Generate executive performance wrap-ups, budget audits, and shareable client presentation links.
+            Executive performance wrap-ups, budget audits, and shareable client presentation links.
           </p>
         </div>
 

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { apiRequest } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../components/ui/Toast';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -14,13 +15,9 @@ import {
   Plus,
   Search,
   Upload,
-  TrendingUp,
-  DollarSign,
-  MousePointerClick,
-  Eye,
-  CheckCircle2,
-  FileSpreadsheet,
   Globe,
+  X,
+  FileSpreadsheet,
 } from 'lucide-react';
 
 interface AdAccountItem {
@@ -79,51 +76,38 @@ interface CampaignSimple {
   };
 }
 
-const PLATFORM_COLORS: Record<string, { label: string; badge: string; border: string }> = {
-  META_ADS: {
-    label: 'Meta Ads',
-    badge: 'bg-blue-50 text-blue-700 border-blue-200',
-    border: 'border-blue-500',
-  },
-  GOOGLE_ADS: {
-    label: 'Google Ads',
-    badge: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    border: 'border-emerald-500',
-  },
-  TIKTOK_ADS: {
-    label: 'TikTok Ads',
-    badge: 'bg-rose-50 text-rose-700 border-rose-200',
-    border: 'border-rose-500',
-  },
-  LINKEDIN_ADS: {
-    label: 'LinkedIn Ads',
-    badge: 'bg-sky-50 text-sky-700 border-sky-200',
-    border: 'border-sky-500',
-  },
+const PLATFORM_CONFIG: Record<string, { label: string; badgeVariant: 'default' | 'neutral' | 'success' | 'warning' }> = {
+  META_ADS: { label: 'Meta', badgeVariant: 'default' },
+  GOOGLE_ADS: { label: 'Google', badgeVariant: 'success' },
+  TIKTOK_ADS: { label: 'TikTok', badgeVariant: 'warning' },
+  LINKEDIN_ADS: { label: 'LinkedIn', badgeVariant: 'neutral' },
 };
 
 export const AdvertisingPage: React.FC = () => {
   const { currentAgency } = useAuth();
+  const { success, error: toastError } = useToast();
   const currency = currentAgency?.currency || 'NPR';
 
   const [adCampaigns, setAdCampaigns] = useState<AdCampaignItem[]>([]);
   const [adAccounts, setAdAccounts] = useState<AdAccountItem[]>([]);
   const [campaignsList, setCampaignsList] = useState<CampaignSimple[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   // Filters
   const [platformFilter, setPlatformFilter] = useState('ALL');
   const [campaignFilter, setCampaignFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showAccountsDetail, setShowAccountsDetail] = useState(false);
+
+  // Progressive Disclosure: Selected Campaign for Side Drawer
+  const [drawerCampaign, setDrawerCampaign] = useState<AdCampaignItem | null>(null);
 
   // Modals
   const [isCreateCampaignModalOpen, setIsCreateCampaignModalOpen] = useState(false);
   const [isConnectAccountModalOpen, setIsConnectAccountModalOpen] = useState(false);
   const [isLogMetricModalOpen, setIsLogMetricModalOpen] = useState(false);
   const [isCsvModalOpen, setIsCsvModalOpen] = useState(false);
-  const [selectedAdCampaign, setSelectedAdCampaign] = useState<AdCampaignItem | null>(null);
+  const [activeModalCampaign, setActiveModalCampaign] = useState<AdCampaignItem | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Forms
@@ -177,9 +161,14 @@ export const AdvertisingPage: React.FC = () => {
           client: { name: c.client?.name || 'Unassigned' },
         }))
       );
-      setErrorMsg(null);
+
+      // Refresh drawer campaign if open
+      if (drawerCampaign) {
+        const updated = (campsRes || []).find((c) => c.id === drawerCampaign.id);
+        if (updated) setDrawerCampaign(updated);
+      }
     } catch (err: any) {
-      setErrorMsg(err.message || 'Failed to load paid advertising resources.');
+      toastError(err.message || 'Failed to load paid advertising resources.');
     } finally {
       setIsLoading(false);
     }
@@ -194,7 +183,7 @@ export const AdvertisingPage: React.FC = () => {
   const handleCreateCampaign = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!campaignForm.campaignId || !campaignForm.name.trim()) {
-      alert('Please select a parent campaign and provide a name.');
+      toastError('Please select a parent campaign and provide a name.');
       return;
     }
 
@@ -211,7 +200,7 @@ export const AdvertisingPage: React.FC = () => {
         }),
       });
 
-      setSuccessMsg('Ad campaign launched successfully.');
+      success('Campaign launched', `${campaignForm.name} is now active.`);
       setIsCreateCampaignModalOpen(false);
       setCampaignForm({
         campaignId: '',
@@ -225,7 +214,7 @@ export const AdvertisingPage: React.FC = () => {
       });
       fetchData();
     } catch (err: any) {
-      alert(err.message || 'Failed to create ad campaign');
+      toastError(err.message || 'Failed to create ad campaign');
     } finally {
       setIsSubmitting(false);
     }
@@ -234,7 +223,7 @@ export const AdvertisingPage: React.FC = () => {
   const handleConnectAccount = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!accountForm.accountName.trim()) {
-      alert('Please enter an account name.');
+      toastError('Please enter an account name.');
       return;
     }
 
@@ -245,7 +234,7 @@ export const AdvertisingPage: React.FC = () => {
         body: JSON.stringify(accountForm),
       });
 
-      setSuccessMsg('Ad account connected successfully.');
+      success('Account connected', `${accountForm.accountName} linked successfully.`);
       setIsConnectAccountModalOpen(false);
       setAccountForm({
         platform: 'META_ADS',
@@ -255,7 +244,7 @@ export const AdvertisingPage: React.FC = () => {
       });
       fetchData();
     } catch (err: any) {
-      alert(err.message || 'Failed to connect ad account');
+      toastError(err.message || 'Failed to connect ad account');
     } finally {
       setIsSubmitting(false);
     }
@@ -263,14 +252,14 @@ export const AdvertisingPage: React.FC = () => {
 
   const handleLogMetric = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedAdCampaign) return;
+    if (!activeModalCampaign) return;
 
     try {
       setIsSubmitting(true);
       await apiRequest('/api/v1/advertising/metrics', {
         method: 'POST',
         body: JSON.stringify({
-          adCampaignId: selectedAdCampaign.id,
+          adCampaignId: activeModalCampaign.id,
           date: metricForm.date,
           impressions: Number(metricForm.impressions),
           reach: Number(metricForm.reach),
@@ -281,11 +270,11 @@ export const AdvertisingPage: React.FC = () => {
         }),
       });
 
-      setSuccessMsg(`Daily performance metric logged for ${selectedAdCampaign.name}`);
+      success('Metric recorded', `Daily performance logged for ${activeModalCampaign.name}`);
       setIsLogMetricModalOpen(false);
       fetchData();
     } catch (err: any) {
-      alert(err.message || 'Failed to log daily metric');
+      toastError(err.message || 'Failed to log daily metric');
     } finally {
       setIsSubmitting(false);
     }
@@ -293,7 +282,7 @@ export const AdvertisingPage: React.FC = () => {
 
   const handleImportCsv = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedAdCampaign) return;
+    if (!activeModalCampaign) return;
 
     try {
       setIsSubmitting(true);
@@ -302,22 +291,20 @@ export const AdvertisingPage: React.FC = () => {
         {
           method: 'POST',
           body: JSON.stringify({
-            adCampaignId: selectedAdCampaign.id,
+            adCampaignId: activeModalCampaign.id,
             csvRows: csvText,
           }),
         }
       );
 
-      setSuccessMsg(
-        `Imported ${res.recordsCreated} metric rows. Added ${formatCurrency(
-          res.totalSpendAdded,
-          currency
-        )} to spend.`
+      success(
+        'CSV Ingested',
+        `Imported ${res.recordsCreated} rows (+${formatCurrency(res.totalSpendAdded, currency)} spend).`
       );
       setIsCsvModalOpen(false);
       fetchData();
     } catch (err: any) {
-      alert(err.message || 'Failed to import CSV metrics');
+      toastError(err.message || 'Failed to import CSV metrics');
     } finally {
       setIsSubmitting(false);
     }
@@ -352,22 +339,19 @@ export const AdvertisingPage: React.FC = () => {
     (acc, c) => acc + c.metrics.reduce((mAcc, m) => mAcc + m.impressions, 0),
     0
   );
+  const avgCtr =
+    totalImpressions > 0 ? ((totalClicks / totalImpressions) * 100).toFixed(2) : '0.00';
 
   return (
     <div className="space-y-6">
-      {/* Top Banner / Breadcrumb Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
+      {/* 1. Header: Clean & Spacious */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-5">
         <div>
-          <div className="flex items-center space-x-2 text-xs font-semibold text-text-muted mb-1">
-            <span>PAID MEDIA</span>
-            <span>/</span>
-            <span className="text-text-primary">ADVERTISING MANAGEMENT</span>
-          </div>
           <h1 className="text-xl font-bold tracking-tight text-text-primary">
-            Paid Advertising Management
+            Advertising Management
           </h1>
           <p className="text-xs text-text-secondary mt-0.5">
-            Cross-platform ad operations across Meta Ads, Google Ads, TikTok Ads, and LinkedIn Ads.
+            Cross-platform campaign operations, budget pacing, and ROAS performance.
           </p>
         </div>
 
@@ -378,7 +362,7 @@ export const AdvertisingPage: React.FC = () => {
             onClick={() => setIsConnectAccountModalOpen(true)}
             leftIcon={<Globe className="w-3.5 h-3.5" />}
           >
-            Connect Ad Account
+            Connect Account
           </Button>
           <Button
             variant="primary"
@@ -391,165 +375,128 @@ export const AdvertisingPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Error Notification */}
-      {errorMsg && (
-        <div className="flex items-center justify-between rounded-md border border-red-200 bg-red-50/70 p-3 text-xs text-red-800">
-          <span>{errorMsg}</span>
-          <button
-            onClick={() => setErrorMsg(null)}
-            className="text-xs font-medium text-red-600 hover:text-red-900"
-          >
-            Dismiss
-          </button>
-        </div>
-      )}
-      {successMsg && (
-        <div className="flex items-center justify-between rounded-md border border-emerald-200 bg-emerald-50/70 p-3 text-xs text-emerald-800">
-          <div className="flex items-center space-x-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-            <span className="font-medium">{successMsg}</span>
+      {/* 2. Compact Connected Accounts Indicator (Expandable) */}
+      <div className="rounded-lg border border-border bg-white px-3.5 py-2.5 text-xs shadow-subtle">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2.5">
+            <span className="flex h-2 w-2 rounded-full bg-success-600 shrink-0" />
+            <span className="font-semibold text-text-primary">
+              {adAccounts.length} Connected Ad Accounts
+            </span>
+            <span className="text-text-muted">•</span>
+            <span className="text-text-secondary text-[11px] truncate max-w-md hidden sm:inline">
+              {adAccounts.length > 0
+                ? adAccounts.map((a) => a.accountName).join(', ')
+                : 'No external accounts connected yet.'}
+            </span>
           </div>
           <button
-            onClick={() => setSuccessMsg(null)}
-            className="text-xs font-medium text-emerald-600 hover:text-emerald-900"
+            onClick={() => setShowAccountsDetail(!showAccountsDetail)}
+            className="text-[11px] font-medium text-primary-600 hover:text-primary-700 transition-colors"
           >
-            Dismiss
+            {showAccountsDetail ? 'Hide Accounts' : 'View Accounts'}
           </button>
         </div>
-      )}
 
-      {/* Connected Ad Accounts Quick Tray */}
-      <div className="flex items-center justify-between overflow-x-auto rounded-lg border border-border bg-slate-50/70 px-4 py-2.5">
-        <div className="flex items-center space-x-2">
-          <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider">
-            Connected Accounts:
-          </span>
-          {adAccounts.length === 0 ? (
-            <span className="text-xs text-text-muted">No external ad accounts connected yet.</span>
-          ) : (
-            adAccounts.map((acc) => (
-              <span
-                key={acc.id}
-                className="inline-flex items-center space-x-1.5 rounded bg-white px-2.5 py-1 text-xs font-medium border border-border text-text-primary shadow-2xs"
-              >
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                <span>{acc.accountName}</span>
-                <span className="text-[10px] text-text-muted">
-                  ({acc.platform.replace('_', ' ')})
-                </span>
-              </span>
-            ))
-          )}
-        </div>
-        <span className="text-xs text-text-secondary font-mono">
-          {adCampaigns.length} Active Campaigns
-        </span>
+        {showAccountsDetail && (
+          <div className="mt-3 pt-3 border-t border-border grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 animate-in fade-in duration-150">
+            {adAccounts.length === 0 ? (
+              <p className="text-[11px] text-text-muted col-span-full py-1">
+                Link Meta Ads Manager, Google Ads, or TikTok accounts to auto-map campaign metrics.
+              </p>
+            ) : (
+              adAccounts.map((acc) => (
+                <div
+                  key={acc.id}
+                  className="p-2 rounded border border-border bg-surface-subtle flex items-center justify-between text-xs"
+                >
+                  <div className="truncate">
+                    <p className="font-medium text-text-primary truncate">{acc.accountName}</p>
+                    <p className="text-[10px] text-text-muted capitalize">
+                      {acc.platform.replace('_', ' ').toLowerCase()}
+                    </p>
+                  </div>
+                  <Badge variant="neutral" size="sm">
+                    {acc.currency}
+                  </Badge>
+                </div>
+              ))
+            )}
+          </div>
+        )}
       </div>
 
-      {/* KPI Cards Row */}
+      {/* 3. Simplified Consistent KPI Cards (Only title, value, and one supporting detail) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Total Ad Spend */}
         <Card className="p-4 bg-white border border-border shadow-subtle">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-text-secondary">Total Paid Ad Spend</span>
-            <div className="p-1.5 rounded-md bg-slate-100 text-slate-700">
-              <DollarSign className="w-4 h-4" />
-            </div>
+          <span className="text-[11px] font-semibold text-text-secondary uppercase tracking-wider block">
+            Total Ad Spend
+          </span>
+          <div className="mt-2 text-2xl font-bold tracking-tight text-text-primary tabular-nums">
+            {formatCurrency(totalSpend, currency)}
           </div>
-          <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-xl font-bold tracking-tight text-text-primary tabular-nums">
-              {formatCurrency(totalSpend, currency)}
-            </span>
-            <span className="text-xs font-medium text-text-muted">
-              of {formatCurrency(totalBudget, currency)}
-            </span>
-          </div>
-          <div className="mt-2 w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-            <div
-              className="bg-primary-600 h-full rounded-full"
-              style={{
-                width: `${totalBudget > 0 ? Math.min((totalSpend / totalBudget) * 100, 100) : 0}%`,
-              }}
-            />
-          </div>
-        </Card>
-
-        <Card className="p-4 bg-white border border-border shadow-subtle">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-text-secondary">Blended ROAS</span>
-            <div className="p-1.5 rounded-md bg-emerald-50 text-emerald-700">
-              <TrendingUp className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-xl font-bold tracking-tight text-emerald-600 tabular-nums">
-              {blendedRoas}x
-            </span>
-            <span className="text-xs text-text-muted">
-              {formatCurrency(totalRevenue, currency)} rev
-            </span>
-          </div>
-          <p className="mt-2 text-[11px] text-text-secondary truncate">
-            Across Meta, Google & programmatic channels
+          <p className="mt-2 text-xs text-text-secondary pt-2 border-t border-border/60">
+            Budget: <span className="font-semibold text-text-primary">{formatCurrency(totalBudget, currency)}</span>
           </p>
         </Card>
 
+        {/* Blended ROAS */}
         <Card className="p-4 bg-white border border-border shadow-subtle">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-text-secondary">Ad Impressions</span>
-            <div className="p-1.5 rounded-md bg-blue-50 text-blue-700">
-              <Eye className="w-4 h-4" />
-            </div>
+          <span className="text-[11px] font-semibold text-text-secondary uppercase tracking-wider block">
+            Blended ROAS
+          </span>
+          <div className="mt-2 text-2xl font-bold tracking-tight text-success-600 tabular-nums">
+            {blendedRoas}x
           </div>
-          <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-xl font-bold tracking-tight text-text-primary tabular-nums">
-              {totalImpressions.toLocaleString()}
-            </span>
-            <span className="text-xs text-text-muted">Views</span>
-          </div>
-          <p className="mt-2 text-[11px] text-text-secondary truncate">
-            Total verified cross-network impressions
+          <p className="mt-2 text-xs text-text-secondary pt-2 border-t border-border/60">
+            Revenue: <span className="font-semibold text-text-primary">{formatCurrency(totalRevenue, currency)}</span>
           </p>
         </Card>
 
+        {/* Impressions */}
         <Card className="p-4 bg-white border border-border shadow-subtle">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-text-secondary">Total Link Clicks</span>
-            <div className="p-1.5 rounded-md bg-purple-50 text-purple-700">
-              <MousePointerClick className="w-4 h-4" />
-            </div>
+          <span className="text-[11px] font-semibold text-text-secondary uppercase tracking-wider block">
+            Verified Impressions
+          </span>
+          <div className="mt-2 text-2xl font-bold tracking-tight text-text-primary tabular-nums">
+            {totalImpressions.toLocaleString()}
           </div>
-          <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-xl font-bold tracking-tight text-text-primary tabular-nums">
-              {totalClicks.toLocaleString()}
-            </span>
-            <span className="text-xs text-text-muted">
-              {totalImpressions > 0
-                ? `${((totalClicks / totalImpressions) * 100).toFixed(2)}% CTR`
-                : '0% CTR'}
-            </span>
+          <p className="mt-2 text-xs text-text-secondary pt-2 border-t border-border/60">
+            Average CTR: <span className="font-semibold text-text-primary">{avgCtr}%</span>
+          </p>
+        </Card>
+
+        {/* Link Clicks */}
+        <Card className="p-4 bg-white border border-border shadow-subtle">
+          <span className="text-[11px] font-semibold text-text-secondary uppercase tracking-wider block">
+            Total Link Clicks
+          </span>
+          <div className="mt-2 text-2xl font-bold tracking-tight text-text-primary tabular-nums">
+            {totalClicks.toLocaleString()}
           </div>
-          <p className="mt-2 text-[11px] text-text-secondary truncate">
-            Avg CPC: {totalClicks > 0 ? formatCurrency(totalSpend / totalClicks, currency) : '—'}
+          <p className="mt-2 text-xs text-text-secondary pt-2 border-t border-border/60">
+            Avg CPC: <span className="font-semibold text-text-primary">{totalClicks > 0 ? formatCurrency(totalSpend / totalClicks, currency) : '—'}</span>
           </p>
         </Card>
       </div>
 
-      {/* Filter and Search Bar */}
+      {/* 4. Unified Clean Toolbar (Platform filters, campaign dropdown, search) */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          {/* Platform Filters */}
-          <div className="inline-flex rounded-md border border-border bg-white p-0.5 text-xs font-medium shadow-2xs">
-            {['ALL', 'META_ADS', 'GOOGLE_ADS', 'TIKTOK_ADS', 'LINKEDIN_ADS'].map((p) => (
+          {/* Platform Segmented Tabs */}
+          <div className="inline-flex rounded-md border border-border bg-white p-0.5 text-xs font-medium shadow-subtle">
+            {['ALL', 'META_ADS', 'GOOGLE_ADS', 'TIKTOK_ADS'].map((p) => (
               <button
                 key={p}
                 onClick={() => setPlatformFilter(p)}
-                className={`px-2.5 py-1 rounded transition-colors ${
+                className={`px-2.5 py-1 rounded transition-colors text-xs ${
                   platformFilter === p
                     ? 'bg-slate-900 text-white font-semibold'
                     : 'text-text-secondary hover:text-text-primary hover:bg-slate-50'
                 }`}
               >
-                {p === 'ALL' ? 'All Platforms' : PLATFORM_COLORS[p]?.label || p}
+                {p === 'ALL' ? 'All Platforms' : PLATFORM_CONFIG[p]?.label || p}
               </button>
             ))}
           </div>
@@ -558,7 +505,7 @@ export const AdvertisingPage: React.FC = () => {
           <select
             value={campaignFilter}
             onChange={(e) => setCampaignFilter(e.target.value)}
-            className="rounded-md border border-border bg-white px-2.5 py-1 text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-primary-500 shadow-2xs"
+            className="h-8 rounded-md border border-border bg-white px-2.5 text-xs text-text-primary shadow-subtle focus:outline-none focus:border-primary-600"
           >
             <option value="ALL">All Parent Campaigns</option>
             {campaignsList.map((c) => (
@@ -569,23 +516,22 @@ export const AdvertisingPage: React.FC = () => {
           </select>
         </div>
 
-        {/* Search Bar */}
+        {/* Search */}
         <div className="relative w-full sm:w-64">
           <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-text-muted" />
           <input
             type="text"
-            placeholder="Search ad campaigns or clients..."
+            placeholder="Search campaigns..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-md border border-border bg-white pl-8 pr-3 py-1 text-xs text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-primary-500"
+            className="h-8 w-full rounded-md border border-border bg-white pl-8 pr-3 text-xs text-text-primary placeholder:text-text-muted shadow-subtle focus:outline-none focus:border-primary-600"
           />
         </div>
       </div>
 
-      {/* Main Ad Campaigns Table */}
+      {/* 5. Simplified Advertising Campaign Table */}
       {isLoading ? (
         <Card className="p-6">
-          <Skeleton className="h-6 w-48 mb-4" />
           <div className="space-y-3">
             {[1, 2, 3, 4].map((i) => (
               <Skeleton key={i} className="h-12 w-full" />
@@ -594,11 +540,11 @@ export const AdvertisingPage: React.FC = () => {
         </Card>
       ) : filteredCampaigns.length === 0 ? (
         <EmptyState
-          title="No paid ad campaigns found"
+          title="No ad campaigns found"
           description={
             searchQuery || platformFilter !== 'ALL'
               ? 'No advertising sets match the selected criteria.'
-              : 'Launch your first paid campaign to track spend, impressions, conversions, and ROAS.'
+              : 'Launch your first paid campaign to monitor spend, impressions, and ROAS.'
           }
           icon={<BarChart3 className="w-6 h-6 text-text-muted" />}
           actionLabel="Launch Ad Campaign"
@@ -608,12 +554,11 @@ export const AdvertisingPage: React.FC = () => {
         <div className="overflow-x-auto rounded-lg border border-border bg-white shadow-subtle">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="border-b border-border bg-slate-50/75 text-[11px] font-semibold text-text-secondary uppercase tracking-wider">
-                <th className="py-3 px-4">Ad Campaign</th>
-                <th className="py-3 px-4">Platform & Account</th>
-                <th className="py-3 px-4">Client & Master Campaign</th>
+              <tr className="border-b border-border bg-slate-50/70 text-[11px] font-semibold text-text-secondary uppercase tracking-wider">
+                <th className="py-3 px-4">Campaign Name</th>
+                <th className="py-3 px-4">Platform</th>
+                <th className="py-3 px-4">Client</th>
                 <th className="py-3 px-4">Spend / Budget</th>
-                <th className="py-3 px-4">Impressions / Clicks</th>
                 <th className="py-3 px-4">ROAS</th>
                 <th className="py-3 px-4">Status</th>
                 <th className="py-3 px-4 text-right">Actions</th>
@@ -622,152 +567,108 @@ export const AdvertisingPage: React.FC = () => {
             <tbody className="divide-y divide-border">
               {filteredCampaigns.map((ad) => {
                 const recentMetrics = ad.metrics || [];
-                const campImpressions = recentMetrics.reduce((s, m) => s + m.impressions, 0);
-                const campClicks = recentMetrics.reduce((s, m) => s + m.clicks, 0);
                 const campRevenue = recentMetrics.reduce((s, m) => s + m.revenue, 0);
                 const campSpend = ad.spendAmount;
                 const campRoas = campSpend > 0 ? (campRevenue / campSpend).toFixed(2) : '0.00';
                 const percentSpent =
                   ad.budgetAmount > 0
-                    ? Math.min(Math.round((ad.spendAmount / ad.budgetAmount) * 100), 100)
+                    ? Math.round((ad.spendAmount / ad.budgetAmount) * 100)
                     : 0;
 
-                const platformInfo = PLATFORM_COLORS[ad.platform] || {
+                const platformInfo = PLATFORM_CONFIG[ad.platform] || {
                   label: ad.platform,
-                  badge: 'bg-slate-100 text-slate-700 border-slate-200',
-                  border: 'border-slate-400',
+                  badgeVariant: 'neutral' as const,
                 };
 
                 return (
-                  <tr key={ad.id} className="hover:bg-slate-50/70 transition-colors">
-                    {/* Name */}
+                  <tr
+                    key={ad.id}
+                    onClick={() => setDrawerCampaign(ad)}
+                    className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
+                  >
+                    {/* Campaign Name */}
                     <td className="py-3 px-4">
-                      <div className="font-semibold text-text-primary">{ad.name}</div>
-                      <div className="text-[11px] text-text-muted mt-0.5">
-                        {ad.startDate ? `Started ${formatDate(ad.startDate)}` : 'Continuous run'}
+                      <div className="font-semibold text-text-primary group-hover:text-primary-600 transition-colors">
+                        {ad.name}
+                      </div>
+                      <div className="text-[11px] text-text-muted truncate max-w-xs">
+                        {ad.campaign.name}
                       </div>
                     </td>
 
-                    {/* Platform & Account */}
+                    {/* Platform */}
                     <td className="py-3 px-4">
-                      <div className="flex flex-col space-y-1">
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium border w-max ${platformInfo.badge}`}
-                        >
-                          {platformInfo.label}
-                        </span>
-                        {ad.adAccount && (
-                          <span className="text-[10px] text-text-muted">
-                            {ad.adAccount.accountName}
-                          </span>
-                        )}
-                      </div>
+                      <Badge variant={platformInfo.badgeVariant} size="sm">
+                        {platformInfo.label}
+                      </Badge>
                     </td>
 
-                    {/* Client & Master Campaign */}
-                    <td className="py-3 px-4">
-                      <div className="font-medium text-text-primary">{ad.campaign.client.name}</div>
-                      <div className="text-[11px] text-text-secondary">{ad.campaign.name}</div>
+                    {/* Client */}
+                    <td className="py-3 px-4 font-medium text-text-primary">
+                      {ad.campaign.client.name}
                     </td>
 
                     {/* Spend / Budget */}
-                    <td className="py-3 px-4 min-w-[150px]">
-                      <div className="flex items-center justify-between text-[11px] mb-1">
-                        <span className="font-semibold text-text-primary tabular-nums">
-                          {formatCurrency(ad.spendAmount, currency)}
-                        </span>
-                        <span className="text-text-muted">
-                          {formatCurrency(ad.budgetAmount, currency)}
-                        </span>
-                      </div>
-                      <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                        <div
-                          className={`h-full rounded-full ${
-                            percentSpent > 90 ? 'bg-rose-500' : 'bg-primary-600'
-                          }`}
-                          style={{ width: `${percentSpent}%` }}
-                        />
-                      </div>
-                      <div className="text-[10px] text-text-muted mt-0.5 text-right tabular-nums">
-                        {percentSpent}% utilized
-                      </div>
-                    </td>
-
-                    {/* Impressions / Clicks */}
-                    <td className="py-3 px-4">
-                      <div className="font-medium text-text-primary tabular-nums">
-                        {campImpressions.toLocaleString()}{' '}
-                        <span className="text-[11px] text-text-muted font-normal">views</span>
-                      </div>
-                      <div className="text-[11px] text-text-secondary tabular-nums">
-                        {campClicks.toLocaleString()} clicks{' '}
-                        {campImpressions > 0 && (
-                          <span className="text-text-muted">
-                            ({((campClicks / campImpressions) * 100).toFixed(2)}%)
-                          </span>
-                        )}
-                      </div>
-                    </td>
-
-                    {/* ROAS Badge */}
-                    <td className="py-3 px-4">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold tabular-nums ${
-                          Number(campRoas) >= 3.0
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                            : Number(campRoas) >= 1.5
-                            ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                            : 'bg-slate-100 text-slate-700 border border-slate-200'
-                        }`}
-                      >
-                        {campRoas}x ROAS
+                    <td className="py-3 px-4 tabular-nums">
+                      <span className="font-semibold text-text-primary">
+                        {formatCurrency(ad.spendAmount, currency)}
                       </span>
-                      <div className="text-[10px] text-text-muted mt-0.5 tabular-nums">
-                        {formatCurrency(campRevenue, currency)} rev
-                      </div>
+                      <span className="text-text-muted text-[11px] ml-1">
+                        / {formatCurrency(ad.budgetAmount, currency)}
+                      </span>
+                      <span className="text-[10px] text-text-muted ml-1.5 font-mono">
+                        ({percentSpent}%)
+                      </span>
+                    </td>
+
+                    {/* ROAS */}
+                    <td className="py-3 px-4 tabular-nums font-semibold">
+                      <span
+                        className={
+                          Number(campRoas) >= 3.0
+                            ? 'text-success-600'
+                            : Number(campRoas) >= 1.5
+                            ? 'text-warning-600'
+                            : 'text-text-secondary'
+                        }
+                      >
+                        {campRoas}x
+                      </span>
                     </td>
 
                     {/* Status */}
                     <td className="py-3 px-4">
                       <Badge
-                        variant={
-                          ad.status === 'ACTIVE'
-                            ? 'success'
-                            : ad.status === 'PAUSED'
-                            ? 'warning'
-                            : 'neutral'
-                        }
+                        variant={ad.status === 'ACTIVE' ? 'success' : 'neutral'}
                         size="sm"
+                        dot
                       >
                         {ad.status}
                       </Badge>
                     </td>
 
                     {/* Actions */}
-                    <td className="py-3 px-4 text-right">
+                    <td
+                      className="py-3 px-4 text-right"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <div className="inline-flex items-center space-x-1.5">
                         <Button
-                          size="sm"
+                          size="xs"
+                          variant="outline"
+                          onClick={() => setDrawerCampaign(ad)}
+                        >
+                          Details
+                        </Button>
+                        <Button
+                          size="xs"
                           variant="ghost"
-                          className="text-xs h-7 px-2"
                           onClick={() => {
-                            setSelectedAdCampaign(ad);
+                            setActiveModalCampaign(ad);
                             setIsLogMetricModalOpen(true);
                           }}
                         >
                           Log Daily
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="text-xs h-7 px-2"
-                          onClick={() => {
-                            setSelectedAdCampaign(ad);
-                            setIsCsvModalOpen(true);
-                          }}
-                          leftIcon={<Upload className="w-3 h-3" />}
-                        >
-                          CSV
                         </Button>
                       </div>
                     </td>
@@ -776,6 +677,240 @@ export const AdvertisingPage: React.FC = () => {
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* 6. Progressive Disclosure: Side Drawer for Deep Campaign Telemetry */}
+      {drawerCampaign && (
+        <div className="fixed inset-0 z-40 flex justify-end bg-black/20 backdrop-blur-[1px] animate-in fade-in duration-150">
+          <div
+            className="w-full max-w-lg bg-white h-full shadow-modal border-l border-border flex flex-col justify-between overflow-hidden animate-in slide-in-from-right duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Drawer Header */}
+            <div className="p-5 border-b border-border flex items-start justify-between bg-surface-subtle">
+              <div>
+                <div className="flex items-center space-x-2 mb-1">
+                  <Badge
+                    variant={
+                      PLATFORM_CONFIG[drawerCampaign.platform]?.badgeVariant || 'neutral'
+                    }
+                    size="sm"
+                  >
+                    {PLATFORM_CONFIG[drawerCampaign.platform]?.label || drawerCampaign.platform}
+                  </Badge>
+                  <Badge
+                    variant={drawerCampaign.status === 'ACTIVE' ? 'success' : 'neutral'}
+                    size="sm"
+                    dot
+                  >
+                    {drawerCampaign.status}
+                  </Badge>
+                </div>
+                <h2 className="text-base font-bold text-text-primary">
+                  {drawerCampaign.name}
+                </h2>
+                <p className="text-xs text-text-secondary mt-0.5">
+                  Client: {drawerCampaign.campaign.client.name} • {drawerCampaign.campaign.name}
+                </p>
+              </div>
+              <button
+                onClick={() => setDrawerCampaign(null)}
+                className="p-1 rounded-md text-text-muted hover:text-text-primary hover:bg-white transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Drawer Body */}
+            <div className="flex-1 overflow-y-auto p-5 space-y-6">
+              {/* Primary Financial Overview */}
+              <div>
+                <h3 className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2.5">
+                  Financial & Return Metrics
+                </h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 rounded-lg border border-border bg-surface-subtle">
+                    <span className="text-[10px] text-text-muted uppercase font-semibold">
+                      Spend / Budget
+                    </span>
+                    <p className="text-sm font-bold text-text-primary tabular-nums mt-0.5">
+                      {formatCurrency(drawerCampaign.spendAmount, currency)}
+                    </p>
+                    <p className="text-[11px] text-text-secondary mt-0.5">
+                      of {formatCurrency(drawerCampaign.budgetAmount, currency)}
+                    </p>
+                  </div>
+
+                  <div className="p-3 rounded-lg border border-border bg-surface-subtle">
+                    <span className="text-[10px] text-text-muted uppercase font-semibold">
+                      ROAS & Attributed Revenue
+                    </span>
+                    {(() => {
+                      const totalRev = drawerCampaign.metrics.reduce((s, m) => s + m.revenue, 0);
+                      const roasVal =
+                        drawerCampaign.spendAmount > 0
+                          ? (totalRev / drawerCampaign.spendAmount).toFixed(2)
+                          : '0.00';
+                      return (
+                        <>
+                          <p className="text-sm font-bold text-success-600 tabular-nums mt-0.5">
+                            {roasVal}x ROAS
+                          </p>
+                          <p className="text-[11px] text-text-secondary mt-0.5">
+                            {formatCurrency(totalRev, currency)} total revenue
+                          </p>
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
+              </div>
+
+              {/* Engagement & Audience Telemetry */}
+              <div>
+                <h3 className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2.5">
+                  Audience & Engagement
+                </h3>
+                {(() => {
+                  const impressions = drawerCampaign.metrics.reduce((s, m) => s + m.impressions, 0);
+                  const clicks = drawerCampaign.metrics.reduce((s, m) => s + m.clicks, 0);
+                  const conversions = drawerCampaign.metrics.reduce((s, m) => s + m.conversions, 0);
+                  const ctr =
+                    impressions > 0 ? ((clicks / impressions) * 100).toFixed(2) : '0.00';
+                  const cpc =
+                    clicks > 0
+                      ? formatCurrency(drawerCampaign.spendAmount / clicks, currency)
+                      : '—';
+
+                  return (
+                    <div className="grid grid-cols-3 gap-2 text-xs">
+                      <div className="p-2.5 rounded border border-border bg-white text-center">
+                        <span className="text-[10px] text-text-muted block">Impressions</span>
+                        <span className="font-bold text-text-primary tabular-nums">
+                          {impressions.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="p-2.5 rounded border border-border bg-white text-center">
+                        <span className="text-[10px] text-text-muted block">Link Clicks</span>
+                        <span className="font-bold text-text-primary tabular-nums">
+                          {clicks.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="p-2.5 rounded border border-border bg-white text-center">
+                        <span className="text-[10px] text-text-muted block">CTR</span>
+                        <span className="font-bold text-primary-600 tabular-nums">
+                          {ctr}%
+                        </span>
+                      </div>
+                      <div className="p-2.5 rounded border border-border bg-white text-center">
+                        <span className="text-[10px] text-text-muted block">Avg CPC</span>
+                        <span className="font-bold text-text-primary tabular-nums">
+                          {cpc}
+                        </span>
+                      </div>
+                      <div className="p-2.5 rounded border border-border bg-white text-center">
+                        <span className="text-[10px] text-text-muted block">Conversions</span>
+                        <span className="font-bold text-success-600 tabular-nums">
+                          {conversions}
+                        </span>
+                      </div>
+                      <div className="p-2.5 rounded border border-border bg-white text-center">
+                        <span className="text-[10px] text-text-muted block">Account</span>
+                        <span className="font-medium text-text-primary truncate block text-[11px]">
+                          {drawerCampaign.adAccount?.accountName || 'Manual'}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Historical Daily Logs */}
+              <div>
+                <div className="flex items-center justify-between mb-2.5">
+                  <h3 className="text-xs font-semibold text-text-secondary uppercase tracking-wider">
+                    Daily Metric Logs ({drawerCampaign.metrics.length})
+                  </h3>
+                  <div className="flex items-center space-x-1.5">
+                    <Button
+                      size="xs"
+                      variant="outline"
+                      leftIcon={<Plus className="w-3 h-3" />}
+                      onClick={() => {
+                        setActiveModalCampaign(drawerCampaign);
+                        setIsLogMetricModalOpen(true);
+                      }}
+                    >
+                      Log
+                    </Button>
+                    <Button
+                      size="xs"
+                      variant="outline"
+                      leftIcon={<Upload className="w-3 h-3" />}
+                      onClick={() => {
+                        setActiveModalCampaign(drawerCampaign);
+                        setIsCsvModalOpen(true);
+                      }}
+                    >
+                      CSV
+                    </Button>
+                  </div>
+                </div>
+
+                {drawerCampaign.metrics.length === 0 ? (
+                  <p className="text-xs text-text-muted p-4 text-center rounded border border-dashed border-border">
+                    No daily telemetry logged yet. Click "Log" or "CSV" above.
+                  </p>
+                ) : (
+                  <div className="rounded-lg border border-border overflow-hidden">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-50 border-b border-border text-[10px] font-semibold text-text-muted uppercase">
+                        <tr>
+                          <th className="py-2 px-3">Date</th>
+                          <th className="py-2 px-3">Spend</th>
+                          <th className="py-2 px-3">Clicks</th>
+                          <th className="py-2 px-3">Revenue</th>
+                          <th className="py-2 px-3">ROAS</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {drawerCampaign.metrics.map((m) => (
+                          <tr key={m.id} className="hover:bg-slate-50 text-[11px] tabular-nums">
+                            <td className="py-2 px-3 font-medium text-text-primary">
+                              {formatDate(m.date)}
+                            </td>
+                            <td className="py-2 px-3 text-text-primary">
+                              {formatCurrency(m.spend, currency)}
+                            </td>
+                            <td className="py-2 px-3 text-text-secondary">
+                              {m.clicks.toLocaleString()}
+                            </td>
+                            <td className="py-2 px-3 text-success-600 font-medium">
+                              {formatCurrency(m.revenue, currency)}
+                            </td>
+                            <td className="py-2 px-3 font-semibold text-text-primary">
+                              {m.spend > 0 ? (m.revenue / m.spend).toFixed(2) : '0.00'}x
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Drawer Footer */}
+            <div className="p-4 border-t border-border bg-surface-subtle flex items-center justify-between">
+              <span className="text-[11px] text-text-muted font-mono">
+                ID: {drawerCampaign.id.slice(0, 12)}
+              </span>
+              <Button size="sm" variant="outline" onClick={() => setDrawerCampaign(null)}>
+                Close Drawer
+              </Button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -789,13 +924,13 @@ export const AdvertisingPage: React.FC = () => {
       >
         <form onSubmit={handleCreateCampaign} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-text-primary mb-1">
-              Parent Marketing Campaign <span className="text-red-500">*</span>
+            <label className="block text-xs font-semibold text-text-primary uppercase tracking-tight mb-1">
+              Parent Marketing Campaign <span className="text-danger-600">*</span>
             </label>
             <select
               value={campaignForm.campaignId}
               onChange={(e) => setCampaignForm({ ...campaignForm, campaignId: e.target.value })}
-              className="w-full rounded-md border border-border bg-white px-3 py-2 text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-primary-500"
+              className="w-full rounded-md border border-border bg-white px-3 py-2 text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-primary-600"
               required
             >
               <option value="">Select a marketing campaign...</option>
@@ -809,29 +944,29 @@ export const AdvertisingPage: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-text-primary mb-1">
-                Advertising Platform <span className="text-red-500">*</span>
+              <label className="block text-xs font-semibold text-text-primary uppercase tracking-tight mb-1">
+                Advertising Platform <span className="text-danger-600">*</span>
               </label>
               <select
                 value={campaignForm.platform}
                 onChange={(e) => setCampaignForm({ ...campaignForm, platform: e.target.value })}
-                className="w-full rounded-md border border-border bg-white px-3 py-2 text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className="w-full rounded-md border border-border bg-white px-3 py-2 text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-primary-600"
               >
                 <option value="META_ADS">Meta Ads (Facebook & Instagram)</option>
-                <option value="GOOGLE_ADS">Google Ads (Search & Performance Max)</option>
+                <option value="GOOGLE_ADS">Google Ads (Search & PMax)</option>
                 <option value="TIKTOK_ADS">TikTok Ads Manager</option>
                 <option value="LINKEDIN_ADS">LinkedIn Campaign Manager</option>
               </select>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-text-primary mb-1">
+              <label className="block text-xs font-semibold text-text-primary uppercase tracking-tight mb-1">
                 Connected Ad Account (Optional)
               </label>
               <select
                 value={campaignForm.adAccountId}
                 onChange={(e) => setCampaignForm({ ...campaignForm, adAccountId: e.target.value })}
-                className="w-full rounded-md border border-border bg-white px-3 py-2 text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className="w-full rounded-md border border-border bg-white px-3 py-2 text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-primary-600"
               >
                 <option value="">No linked account (Manual / Standalone)</option>
                 {adAccounts
@@ -845,69 +980,49 @@ export const AdvertisingPage: React.FC = () => {
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-medium text-text-primary mb-1">
-              Ad Campaign Name <span className="text-red-500">*</span>
-            </label>
+          <Input
+            label="Ad Campaign Name"
+            placeholder="e.g. Meta Conversions - Himalayan Roast Q4"
+            value={campaignForm.name}
+            onChange={(e) => setCampaignForm({ ...campaignForm, name: e.target.value })}
+            required
+          />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input
-              placeholder="e.g. Meta Conversions - Himalayan Roast Q4"
-              value={campaignForm.name}
-              onChange={(e) => setCampaignForm({ ...campaignForm, name: e.target.value })}
+              label={`Allocated Budget (${currency})`}
+              type="number"
+              min="0"
+              value={campaignForm.budgetAmount}
+              onChange={(e) =>
+                setCampaignForm({ ...campaignForm, budgetAmount: Number(e.target.value) })
+              }
               required
+            />
+            <Input
+              label={`Initial / Historical Spend (${currency})`}
+              type="number"
+              min="0"
+              value={campaignForm.spendAmount}
+              onChange={(e) =>
+                setCampaignForm({ ...campaignForm, spendAmount: Number(e.target.value) })
+              }
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-text-primary mb-1">
-                Allocated Budget ({currency}) <span className="text-red-500">*</span>
-              </label>
-              <Input
-                type="number"
-                min="0"
-                value={campaignForm.budgetAmount}
-                onChange={(e) =>
-                  setCampaignForm({ ...campaignForm, budgetAmount: Number(e.target.value) })
-                }
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-text-primary mb-1">
-                Initial / Historical Spend ({currency})
-              </label>
-              <Input
-                type="number"
-                min="0"
-                value={campaignForm.spendAmount}
-                onChange={(e) =>
-                  setCampaignForm({ ...campaignForm, spendAmount: Number(e.target.value) })
-                }
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-text-primary mb-1">
-                Start Date
-              </label>
-              <Input
-                type="date"
-                value={campaignForm.startDate}
-                onChange={(e) => setCampaignForm({ ...campaignForm, startDate: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-text-primary mb-1">
-                End Date (Optional)
-              </label>
-              <Input
-                type="date"
-                value={campaignForm.endDate}
-                onChange={(e) => setCampaignForm({ ...campaignForm, endDate: e.target.value })}
-              />
-            </div>
+            <Input
+              label="Start Date"
+              type="date"
+              value={campaignForm.startDate}
+              onChange={(e) => setCampaignForm({ ...campaignForm, startDate: e.target.value })}
+            />
+            <Input
+              label="End Date (Optional)"
+              type="date"
+              value={campaignForm.endDate}
+              onChange={(e) => setCampaignForm({ ...campaignForm, endDate: e.target.value })}
+            />
           </div>
 
           <div className="flex items-center justify-end space-x-2 pt-4 border-t border-border">
@@ -936,13 +1051,13 @@ export const AdvertisingPage: React.FC = () => {
       >
         <form onSubmit={handleConnectAccount} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-text-primary mb-1">
-              Platform <span className="text-red-500">*</span>
+            <label className="block text-xs font-semibold text-text-primary uppercase tracking-tight mb-1">
+              Platform <span className="text-danger-600">*</span>
             </label>
             <select
               value={accountForm.platform}
               onChange={(e) => setAccountForm({ ...accountForm, platform: e.target.value })}
-              className="w-full rounded-md border border-border bg-white px-3 py-2 text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-primary-500"
+              className="w-full rounded-md border border-border bg-white px-3 py-2 text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-primary-600"
             >
               <option value="META_ADS">Meta Ads Manager</option>
               <option value="GOOGLE_ADS">Google Ads</option>
@@ -951,36 +1066,26 @@ export const AdvertisingPage: React.FC = () => {
             </select>
           </div>
 
-          <div>
-            <label className="block text-xs font-medium text-text-primary mb-1">
-              Account Display Name <span className="text-red-500">*</span>
-            </label>
-            <Input
-              placeholder="e.g. Apex Digital Meta Business Account"
-              value={accountForm.accountName}
-              onChange={(e) => setAccountForm({ ...accountForm, accountName: e.target.value })}
-              required
-            />
-          </div>
+          <Input
+            label="Account Display Name"
+            placeholder="e.g. Apex Digital Meta Business Account"
+            value={accountForm.accountName}
+            onChange={(e) => setAccountForm({ ...accountForm, accountName: e.target.value })}
+            required
+          />
 
-          <div>
-            <label className="block text-xs font-medium text-text-primary mb-1">
-              External Ad Account ID (Optional)
-            </label>
-            <Input
-              placeholder="e.g. act_192837465 or 982-123-4567"
-              value={accountForm.externalId}
-              onChange={(e) => setAccountForm({ ...accountForm, externalId: e.target.value })}
-            />
-          </div>
+          <Input
+            label="External Ad Account ID (Optional)"
+            placeholder="e.g. act_192837465 or 982-123-4567"
+            value={accountForm.externalId}
+            onChange={(e) => setAccountForm({ ...accountForm, externalId: e.target.value })}
+          />
 
-          <div>
-            <label className="block text-xs font-medium text-text-primary mb-1">Currency</label>
-            <Input
-              value={accountForm.currency}
-              onChange={(e) => setAccountForm({ ...accountForm, currency: e.target.value })}
-            />
-          </div>
+          <Input
+            label="Currency"
+            value={accountForm.currency}
+            onChange={(e) => setAccountForm({ ...accountForm, currency: e.target.value })}
+          />
 
           <div className="flex items-center justify-end space-x-2 pt-4 border-t border-border">
             <Button
@@ -1002,107 +1107,80 @@ export const AdvertisingPage: React.FC = () => {
       <Dialog
         isOpen={isLogMetricModalOpen}
         onClose={() => setIsLogMetricModalOpen(false)}
-        title={`Log Daily Performance — ${selectedAdCampaign?.name || ''}`}
+        title={`Log Daily Performance — ${activeModalCampaign?.name || ''}`}
         description="Record verified ad impressions, spend, clicks, and revenue. ROAS is automatically derived."
         maxWidth="lg"
       >
         <form onSubmit={handleLogMetric} className="space-y-4">
-          <div>
-            <label className="block text-xs font-medium text-text-primary mb-1">
-              Performance Date <span className="text-red-500">*</span>
-            </label>
+          <Input
+            label="Performance Date"
+            type="date"
+            value={metricForm.date}
+            onChange={(e) => setMetricForm({ ...metricForm, date: e.target.value })}
+            required
+          />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input
-              type="date"
-              value={metricForm.date}
-              onChange={(e) => setMetricForm({ ...metricForm, date: e.target.value })}
-              required
+              label="Impressions"
+              type="number"
+              min="0"
+              value={metricForm.impressions}
+              onChange={(e) =>
+                setMetricForm({ ...metricForm, impressions: Number(e.target.value) })
+              }
+            />
+            <Input
+              label="Reach"
+              type="number"
+              min="0"
+              value={metricForm.reach}
+              onChange={(e) => setMetricForm({ ...metricForm, reach: Number(e.target.value) })}
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-text-primary mb-1">
-                Impressions
-              </label>
-              <Input
-                type="number"
-                min="0"
-                value={metricForm.impressions}
-                onChange={(e) =>
-                  setMetricForm({ ...metricForm, impressions: Number(e.target.value) })
-                }
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-text-primary mb-1">Reach</label>
-              <Input
-                type="number"
-                min="0"
-                value={metricForm.reach}
-                onChange={(e) => setMetricForm({ ...metricForm, reach: Number(e.target.value) })}
-              />
-            </div>
+            <Input
+              label="Link Clicks"
+              type="number"
+              min="0"
+              value={metricForm.clicks}
+              onChange={(e) => setMetricForm({ ...metricForm, clicks: Number(e.target.value) })}
+            />
+            <Input
+              label="Conversions / Leads"
+              type="number"
+              min="0"
+              value={metricForm.conversions}
+              onChange={(e) =>
+                setMetricForm({ ...metricForm, conversions: Number(e.target.value) })
+              }
+            />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-text-primary mb-1">
-                Link Clicks
-              </label>
-              <Input
-                type="number"
-                min="0"
-                value={metricForm.clicks}
-                onChange={(e) => setMetricForm({ ...metricForm, clicks: Number(e.target.value) })}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-text-primary mb-1">
-                Conversions / Leads
-              </label>
-              <Input
-                type="number"
-                min="0"
-                value={metricForm.conversions}
-                onChange={(e) =>
-                  setMetricForm({ ...metricForm, conversions: Number(e.target.value) })
-                }
-              />
-            </div>
+            <Input
+              label={`Spend Amount (${currency})`}
+              type="number"
+              min="0"
+              step="0.01"
+              value={metricForm.spend}
+              onChange={(e) => setMetricForm({ ...metricForm, spend: Number(e.target.value) })}
+              required
+            />
+            <Input
+              label={`Attributed Revenue (${currency})`}
+              type="number"
+              min="0"
+              step="0.01"
+              value={metricForm.revenue}
+              onChange={(e) => setMetricForm({ ...metricForm, revenue: Number(e.target.value) })}
+            />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-text-primary mb-1">
-                Spend Amount ({currency}) <span className="text-red-500">*</span>
-              </label>
-              <Input
-                type="number"
-                min="0"
-                step="0.01"
-                value={metricForm.spend}
-                onChange={(e) => setMetricForm({ ...metricForm, spend: Number(e.target.value) })}
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-text-primary mb-1">
-                Attributed Revenue ({currency})
-              </label>
-              <Input
-                type="number"
-                min="0"
-                step="0.01"
-                value={metricForm.revenue}
-                onChange={(e) => setMetricForm({ ...metricForm, revenue: Number(e.target.value) })}
-              />
-            </div>
-          </div>
-
-          {/* Derived ROAS Indicator */}
-          <div className="rounded border border-border bg-slate-50 p-3 flex items-center justify-between text-xs">
-            <span className="text-text-secondary">Estimated Daily ROAS:</span>
-            <span className="font-bold text-text-primary">
+          <div className="rounded border border-border bg-surface-subtle p-3 flex items-center justify-between text-xs">
+            <span className="text-text-secondary font-medium">Estimated Daily ROAS:</span>
+            <span className="font-bold text-success-600">
               {metricForm.spend > 0
                 ? `${(metricForm.revenue / metricForm.spend).toFixed(2)}x`
                 : '0.00x'}
@@ -1129,30 +1207,30 @@ export const AdvertisingPage: React.FC = () => {
       <Dialog
         isOpen={isCsvModalOpen}
         onClose={() => setIsCsvModalOpen(false)}
-        title={`Batch Ingest Ad Metrics (CSV) — ${selectedAdCampaign?.name || ''}`}
+        title={`Batch Ingest Ad Metrics (CSV) — ${activeModalCampaign?.name || ''}`}
         description="Paste raw CSV exported from Meta Ads Manager, Google Ads or TikTok Ads."
         maxWidth="lg"
       >
         <form onSubmit={handleImportCsv} className="space-y-4">
-          <div className="rounded border border-blue-200 bg-blue-50/60 p-3 text-xs text-blue-800">
+          <div className="rounded border border-primary-200 bg-primary-50/50 p-3 text-xs text-primary-900">
             <div className="font-semibold mb-1 flex items-center space-x-1.5">
-              <FileSpreadsheet className="w-3.5 h-3.5 text-blue-600" />
+              <FileSpreadsheet className="w-3.5 h-3.5 text-primary-600" />
               <span>Required CSV Header Format:</span>
             </div>
-            <code className="block bg-white p-2 rounded border border-blue-200 text-[11px] font-mono select-all">
+            <code className="block bg-white p-2 rounded border border-primary-200/80 text-[11px] font-mono select-all text-text-primary">
               date,impressions,reach,clicks,spend,conversions,revenue
             </code>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-text-primary mb-1">
+            <label className="block text-xs font-semibold text-text-primary uppercase tracking-tight mb-1">
               CSV Content
             </label>
             <textarea
               rows={7}
               value={csvText}
               onChange={(e) => setCsvText(e.target.value)}
-              className="w-full font-mono text-xs rounded-md border border-border p-3 focus:outline-none focus:ring-1 focus:ring-primary-500"
+              className="w-full font-mono text-xs rounded-md border border-border p-3 focus:outline-none focus:border-primary-600"
               required
             />
           </div>
