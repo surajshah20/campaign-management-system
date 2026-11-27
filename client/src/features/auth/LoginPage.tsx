@@ -113,46 +113,48 @@ export const LoginPage: React.FC = () => {
             </Button>
           </form>
 
-          {/* Discreet Sandbox Quick-Fill Drawer */}
-          <div className="mt-6 border-t border-border pt-4">
-            <button
-              type="button"
-              onClick={() => setShowDemoSelector(!showDemoSelector)}
-              className="flex items-center justify-between w-full text-[11px] font-medium text-text-secondary hover:text-text-primary py-1 transition-colors"
-            >
-              <span>Development Demo Accounts</span>
-              <ChevronDown
-                className={`w-3.5 h-3.5 transition-transform ${
-                  showDemoSelector ? 'rotate-180' : ''
-                }`}
-              />
-            </button>
+          {/* Discreet Sandbox Quick-Fill Drawer (Exclusively in Development) */}
+          {import.meta.env.DEV && (
+            <div className="mt-6 border-t border-border pt-4">
+              <button
+                type="button"
+                onClick={() => setShowDemoSelector(!showDemoSelector)}
+                className="flex items-center justify-between w-full text-[11px] font-medium text-text-secondary hover:text-text-primary py-1 transition-colors"
+              >
+                <span>Development Sandbox Accounts</span>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 transition-transform ${
+                    showDemoSelector ? 'rotate-180' : ''
+                  }`}
+                />
+              </button>
 
-            {showDemoSelector && (
-              <div className="mt-2.5 grid grid-cols-2 gap-1.5 animate-in fade-in duration-150">
-                {[
-                  { label: 'Agency Owner', email: 'owner@apexdigital.com' },
-                  { label: 'Campaign Mgr', email: 'manager@apexdigital.com' },
-                  { label: 'Designer', email: 'designer@apexdigital.com' },
-                  { label: 'Client Portal', email: 'client@himalayancoffee.com' },
-                ].map((acc) => (
-                  <button
-                    key={acc.email}
-                    type="button"
-                    onClick={() => fillQuickDemo(acc.email)}
-                    className="p-2 text-left rounded border border-border bg-surface-subtle hover:bg-white hover:border-slate-300 transition-all text-xs"
-                  >
-                    <p className="font-semibold text-text-primary text-[11px]">
-                      {acc.label}
-                    </p>
-                    <p className="text-[10px] text-text-muted truncate mt-0.5 font-mono">
-                      {acc.email}
-                    </p>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+              {showDemoSelector && (
+                <div className="mt-2.5 grid grid-cols-2 gap-1.5 animate-in fade-in duration-150">
+                  {[
+                    { label: 'Agency Owner', email: 'owner@apexdigital.com' },
+                    { label: 'Campaign Mgr', email: 'manager@apexdigital.com' },
+                    { label: 'Designer', email: 'designer@apexdigital.com' },
+                    { label: 'Client Portal', email: 'client@himalayancoffee.com' },
+                  ].map((acc) => (
+                    <button
+                      key={acc.email}
+                      type="button"
+                      onClick={() => fillQuickDemo(acc.email)}
+                      className="p-2 text-left rounded border border-border bg-surface-subtle hover:bg-white hover:border-slate-300 transition-all text-xs"
+                    >
+                      <p className="font-semibold text-text-primary text-[11px]">
+                        {acc.label}
+                      </p>
+                      <p className="text-[10px] text-text-muted truncate mt-0.5 font-mono">
+                        {acc.email}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </Card>
 
         {/* Footer Navigation & Security Assurance */}

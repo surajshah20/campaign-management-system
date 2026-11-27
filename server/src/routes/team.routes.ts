@@ -8,6 +8,7 @@ import { authenticate } from '../middleware/auth';
 import { requireTenant } from '../middleware/tenant';
 import { requirePermission } from '../middleware/rbac';
 import { validateRequest } from '../middleware/validate';
+import { inviteLimiter } from '../middleware/rateLimiter';
 
 const router = Router();
 
@@ -19,6 +20,7 @@ router.get('/invitations/:id/token', requirePermission('team:invite'), TeamContr
 
 router.post(
   '/invite',
+  inviteLimiter,
   requirePermission('team:invite'),
   validateRequest(inviteMemberSchema),
   TeamController.inviteMember

@@ -44,7 +44,10 @@ export async function apiRequest<T = any>(
     headers['x-agency-id'] = activeAgencyId;
   }
 
-  const response = await fetch(endpoint, {
+  const baseUrl = import.meta.env.VITE_API_URL || '';
+  const url = endpoint.startsWith('http') ? endpoint : `${baseUrl}${endpoint}`;
+
+  const response = await fetch(url, {
     ...options,
     headers,
     credentials: 'include', // sends HTTP-only session cookies

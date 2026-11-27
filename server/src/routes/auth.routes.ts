@@ -7,11 +7,12 @@ import {
 } from '../controllers/auth.controller';
 import { validateRequest } from '../middleware/validate';
 import { authenticate } from '../middleware/auth';
+import { authLimiter } from '../middleware/rateLimiter';
 
 const router = Router();
 
-router.post('/register', validateRequest(registerSchema), AuthController.register);
-router.post('/login', validateRequest(loginSchema), AuthController.login);
+router.post('/register', authLimiter, validateRequest(registerSchema), AuthController.register);
+router.post('/login', authLimiter, validateRequest(loginSchema), AuthController.login);
 router.post('/logout', AuthController.logout);
 router.get('/me', authenticate, AuthController.getMe);
 
@@ -19,6 +20,7 @@ router.get('/me', authenticate, AuthController.getMe);
 router.get('/invitation/:token', AuthController.getInvitation);
 router.post(
   '/accept-invitation',
+  authLimiter,
   validateRequest(acceptInvitationSchema),
   AuthController.acceptInvitation
 );

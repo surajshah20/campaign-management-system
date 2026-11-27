@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { config } from './config';
 import { errorHandler } from './middleware/errorHandler';
+import { apiLimiter } from './middleware/rateLimiter';
 import authRoutes from './routes/auth.routes';
 import workspaceRoutes from './routes/workspace.routes';
 import clientRoutes from './routes/client.routes';
@@ -65,6 +66,9 @@ app.get('/api/health', (_req, res) => {
     service: 'agency-os-api',
   });
 });
+
+// Apply General Rate Limiter to API v1
+app.use('/api/v1', apiLimiter);
 
 // API Routes
 app.use('/api/v1/auth', authRoutes);
