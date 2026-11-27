@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { apiRequest } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/ui/Toast';
@@ -9,6 +9,7 @@ import { Input } from '../../components/ui/Input';
 import { Dialog } from '../../components/ui/Dialog';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { formatDate } from '../../lib/utils';
+import { TaskDetailsDrawer, TaskDetail } from './TaskDetailsDrawer';
 import {
   Plus,
   Kanban,
@@ -16,16 +17,16 @@ import {
   Calendar,
   Building,
   MessageSquare,
-  Send,
+  Search,
 } from 'lucide-react';
 
 interface TaskItem {
   id: string;
   title: string;
-  description?: string;
+  description?: string | null;
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
   status: 'TODO' | 'IN_PROGRESS' | 'IN_REVIEW' | 'COMPLETED' | 'BLOCKED';
-  dueDate?: string;
+  dueDate?: string | null;
   assignee?: {
     id: string;
     firstName: string;
@@ -37,16 +38,19 @@ interface TaskItem {
   _count: { comments: number };
 }
 
-const KANBAN_COLUMNS: {
+interface ColumnConfig {
   id: TaskItem['status'];
   label: string;
-  accent: string;
-}[] = [
-  { id: 'TODO', label: 'To Do', accent: 'border-slate-300' },
-  { id: 'IN_PROGRESS', label: 'In Progress', accent: 'border-primary-500' },
-  { id: 'IN_REVIEW', label: 'In Review', accent: 'border-warning-500' },
-  { id: 'COMPLETED', label: 'Completed', accent: 'border-success-500' },
-  { id: 'BLOCKED', label: 'Blocked', accent: 'border-danger-500' },
+  dotColor: string;
+  badgeVariant: 'neutral' | 'default' | 'warning' | 'success' | 'danger';
+}
+
+const KANBAN_COLUMNS: ColumnConfig[] = [
+  { id: 'TODO', label: 'To Do', dotColor: 'bg-slate-400', badgeVariant: 'neutral' },
+  { id: 'IN_PROGRESS', label: 'In Progress', dotColor: 'bg-primary-600', badgeVariant: 'default' },
+  { id: 'IN_REVIEW', label: 'In Review', dotColor: 'bg-warning-500', badgeVariant: 'warning' },
+  { id: 'COMPLETED', label: 'Completed', dotColor: 'bg-success-600', badgeVariant: 'success' },
+  { id: 'BLOCKED', label: 'Blocked', dotColor: 'bg-danger-600', badgeVariant: 'danger' },
 ];
 
 export const TasksPage: React.FC = () => {
@@ -59,11 +63,13 @@ export const TasksPage: React.FC = () => {
   const [members, setMembers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // View mode
+  // Filters & Search
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
   const [priorityFilter, setPriorityFilter] = useState('ALL');
+  const [clientFilter, setClientFilter] = useState('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // New Task Modal
+  // Create Task Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -73,14 +79,13 @@ export const TasksPage: React.FC = () => {
     campaignId: '',
     assigneeId: '',
     priority: 'MEDIUM',
-    status: 'TODO',
+    status: 'TODO' as TaskItem['status'],
     dueDate: '',
   });
 
-  // Task Details & Comment Modal
-  const [selectedTask, setSelectedTask] = useState<any | null>(null);
-  const [newComment, setNewComment] = useState('');
-  const [isCommentSubmitting, setIsCommentSubmitting] = useState(false);
+  // Task Details Drawer
+  const [selectedTask, setSelectedTask] = useState<TaskDetail | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   const fetchTasks = async () => {
     try {
@@ -99,8 +104,22 @@ export const TasksPage: React.FC = () => {
       setClients(clientsData);
       setCampaigns(campaignsData);
       setMembers(membersData);
-    } catch {
-      // Handled
+
+      // If drawer is open, refresh selected task
+      if (selectedTask) {
+        const updated = tasksData.find((t) => t.id === selectedTask.id);
+        if (updated) {
+          // Fetch full task details for drawer
+          try {
+            const fullDetails = await apiRequest<TaskDetail>(`/api/v1/tasks/${updated.id}`);
+            setSelectedTask(fullDetails);
+          } catch {
+            // Keep existing if fetch fails
+          }
+        }
+      }
+    } catch (err: any) {
+      toastError(err.message || 'Failed to fetch tasks.');
     } finally {
       setIsLoading(false);
     }
@@ -112,17 +131,44 @@ export const TasksPage: React.FC = () => {
     }
   }, [currentAgency?.id, priorityFilter]);
 
+  // Client-side filtering for search & client brand
+  const filteredTasks = useMemo(() => {
+    return tasks.filter((task) => {
+      // Client brand filter
+      if (clientFilter !== 'ALL' && task.client?.id !== clientFilter) {
+        return false;
+      }
+
+      // Search query across title, client, and campaign
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        const matchesTitle = task.title.toLowerCase().includes(query);
+        const matchesClient = task.client?.name?.toLowerCase().includes(query);
+        const matchesCampaign = task.campaign?.name?.toLowerCase().includes(query);
+        if (!matchesTitle && !matchesClient && !matchesCampaign) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [tasks, clientFilter, searchQuery]);
+
   const handleStatusChange = async (taskId: string, newStatus: TaskItem['status']) => {
     // Optimistic UI update
     setTasks((prev) =>
       prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t))
     );
+    if (selectedTask && selectedTask.id === taskId) {
+      setSelectedTask((prev) => (prev ? { ...prev, status: newStatus } : null));
+    }
 
     try {
       await apiRequest(`/api/v1/tasks/${taskId}/status`, {
         method: 'PATCH',
         body: JSON.stringify({ status: newStatus }),
       });
+      success('Status updated', `Task moved to ${newStatus.replace('_', ' ')}.`);
     } catch {
       await fetchTasks();
     }
@@ -161,34 +207,91 @@ export const TasksPage: React.FC = () => {
 
   const openTaskDetails = async (taskId: string) => {
     try {
-      const details = await apiRequest(`/api/v1/tasks/${taskId}`);
+      const details = await apiRequest<TaskDetail>(`/api/v1/tasks/${taskId}`);
       setSelectedTask(details);
+      setIsDrawerOpen(true);
     } catch (err: any) {
-      alert(err.message || 'Failed to load task details.');
+      toastError(err.message || 'Failed to load task details.');
     }
   };
 
-  const handleAddComment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newComment.trim() || !selectedTask) return;
-
+  const handleUpdateTask = async (taskId: string, data: Partial<TaskDetail>) => {
     try {
-      setIsCommentSubmitting(true);
-      const added = await apiRequest(`/api/v1/tasks/${selectedTask.id}/comments`, {
+      const updated = await apiRequest<TaskDetail>(`/api/v1/tasks/${taskId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      });
+
+      setSelectedTask(updated);
+      setTasks((prev) =>
+        prev.map((t) => {
+          if (t.id !== taskId) return t;
+          return {
+            ...t,
+            title: updated.title,
+            description: updated.description,
+            priority: updated.priority,
+            status: updated.status,
+            dueDate: updated.dueDate,
+            client: updated.client ? { id: updated.client.id, name: updated.client.name } : null,
+            campaign: updated.campaign ? { id: updated.campaign.id, name: updated.campaign.name } : null,
+            assignee: updated.assignee
+              ? {
+                  id: updated.assignee.id,
+                  firstName: updated.assignee.firstName,
+                  lastName: updated.assignee.lastName,
+                  avatarUrl: updated.assignee.avatarUrl,
+                }
+              : null,
+          };
+        })
+      );
+      success('Task updated', 'Changes have been saved successfully.');
+    } catch (err: any) {
+      toastError(err.message || 'Failed to update task.');
+      throw err;
+    }
+  };
+
+  const handleDeleteTask = async (taskId: string) => {
+    try {
+      await apiRequest(`/api/v1/tasks/${taskId}`, {
+        method: 'DELETE',
+      });
+
+      setTasks((prev) => prev.filter((t) => t.id !== taskId));
+      setIsDrawerOpen(false);
+      setSelectedTask(null);
+      success('Task deleted', 'The task deliverable has been removed.');
+    } catch (err: any) {
+      toastError(err.message || 'Failed to delete task.');
+      throw err;
+    }
+  };
+
+  const handleAddComment = async (taskId: string, content: string) => {
+    try {
+      const added = await apiRequest(`/api/v1/tasks/${taskId}/comments`, {
         method: 'POST',
-        body: JSON.stringify({ content: newComment.trim() }),
+        body: JSON.stringify({ content }),
       });
 
       setSelectedTask((prev: any) => ({
         ...prev,
-        comments: [...(prev.comments || []), added],
+        comments: [...(prev?.comments || []), added],
       }));
-      setNewComment('');
-      fetchTasks();
+
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === taskId
+            ? { ...t, _count: { comments: (t._count?.comments || 0) + 1 } }
+            : t
+        )
+      );
+      success('Comment posted', 'Your update has been shared with the team.');
     } catch (err: any) {
-      alert(err.message || 'Failed to add comment.');
-    } finally {
-      setIsCommentSubmitting(false);
+      toastError(err.message || 'Failed to add comment.');
+      throw err;
     }
   };
 
@@ -208,20 +311,20 @@ export const TasksPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-5">
+      {/* 1. Header with Title & Primary Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-5">
         <div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2.5">
             <h1 className="text-xl font-bold tracking-tight text-text-primary">
               Task Management
             </h1>
             <Badge variant="outline" size="sm">
-              {tasks.length} Tasks
+              {filteredTasks.length} {filteredTasks.length === 1 ? 'Task' : 'Tasks'}
             </Badge>
           </div>
           <p className="text-xs text-text-secondary mt-1">
-            Organize task queues, set priorities, and collaborate across campaigns and client brands.
+            Organize team deliverables, track execution progress, and collaborate across campaigns.
           </p>
         </div>
 
@@ -255,187 +358,400 @@ export const TasksPage: React.FC = () => {
           <Button
             size="sm"
             leftIcon={<Plus className="w-3.5 h-3.5" />}
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => {
+              setFormData((prev) => ({ ...prev, status: 'TODO' }));
+              setIsModalOpen(true);
+            }}
           >
             Create Task
           </Button>
         </div>
       </div>
 
-      {/* Filter Row */}
-      <div className="flex items-center space-x-2">
-        <span className="text-xs text-text-muted font-medium">Priority:</span>
-        {['ALL', 'URGENT', 'HIGH', 'MEDIUM', 'LOW'].map((p) => (
-          <button
-            key={p}
-            onClick={() => setPriorityFilter(p)}
-            className={`rounded px-2.5 py-1 text-xs font-medium border transition-colors ${
-              priorityFilter === p
-                ? 'bg-primary-50 border-primary-500 text-primary-700 font-semibold'
-                : 'bg-white border-border text-text-secondary hover:bg-slate-50'
-            }`}
+      {/* 2. Unified Toolbar (Search, Client Filter, Priority Filter Tabs) */}
+      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Priority Filter Tabs */}
+          <div className="inline-flex rounded-md border border-border bg-white p-0.5 text-xs font-medium shadow-subtle">
+            {['ALL', 'URGENT', 'HIGH', 'MEDIUM', 'LOW'].map((p) => (
+              <button
+                key={p}
+                onClick={() => setPriorityFilter(p)}
+                className={`px-2.5 py-1 rounded transition-colors text-xs ${
+                  priorityFilter === p
+                    ? 'bg-slate-900 text-white font-semibold'
+                    : 'text-text-secondary hover:text-text-primary hover:bg-slate-50'
+                }`}
+              >
+                {p === 'ALL' ? 'All Priority' : p.charAt(0) + p.slice(1).toLowerCase()}
+              </button>
+            ))}
+          </div>
+
+          {/* Client Filter Dropdown */}
+          <select
+            value={clientFilter}
+            onChange={(e) => setClientFilter(e.target.value)}
+            className="h-8 rounded-md border border-border bg-white px-2.5 text-xs text-text-primary shadow-subtle focus:outline-none focus:border-primary-600"
           >
-            {p === 'ALL' ? 'All' : p.charAt(0) + p.slice(1).toLowerCase()}
-          </button>
-        ))}
+            <option value="ALL">All Client Brands</option>
+            {clients.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Search Field */}
+        <div className="relative w-full md:w-72">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-text-muted" />
+          <input
+            type="text"
+            placeholder="Search tasks, clients, campaigns..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full h-8 pl-8 pr-3 rounded-md border border-border bg-white text-xs text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary-600 shadow-subtle"
+          />
+        </div>
       </div>
 
-      {/* Kanban Board View */}
+      {/* 3. Board or List View */}
       {isLoading ? (
-        <div className="grid grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-3.5">
           {[1, 2, 3, 4, 5].map((i) => (
-            <Skeleton key={i} className="h-96 rounded-lg" />
+            <Skeleton key={i} className="h-96 rounded-xl" />
           ))}
         </div>
       ) : viewMode === 'kanban' ? (
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-3.5 overflow-x-auto pb-4">
+        /* Kanban Board View */
+        <div className="flex gap-3.5 overflow-x-auto pb-4 scrollbar-thin">
           {KANBAN_COLUMNS.map((col) => {
-            const colTasks = tasks.filter((t) => t.status === col.id);
+            const colTasks = filteredTasks.filter((t) => t.status === col.id);
 
             return (
               <div
                 key={col.id}
-                className="flex flex-col rounded-lg border border-border bg-slate-50/70 p-3 min-w-[220px]"
+                className="flex-1 min-w-[270px] max-w-[340px] flex flex-col rounded-xl border border-border bg-slate-50/70 p-3 shadow-subtle"
               >
                 {/* Column Header */}
-                <div className="flex items-center justify-between pb-2 mb-2 border-b border-border">
-                  <div className="flex items-center space-x-1.5">
+                <div className="flex items-center justify-between pb-2 mb-2.5 border-b border-border/80">
+                  <div className="flex items-center space-x-2">
+                    <span className={`w-2 h-2 rounded-full ${col.dotColor}`} />
                     <span className="text-xs font-bold text-text-primary">
                       {col.label}
                     </span>
-                    <span className="rounded-full bg-white border border-border px-1.5 text-[10px] font-semibold text-text-secondary tabular-nums">
+                    <Badge variant={col.badgeVariant} size="sm">
                       {colTasks.length}
-                    </span>
+                    </Badge>
                   </div>
+
+                  {/* Column Quick Add */}
+                  <button
+                    onClick={() => {
+                      setFormData((prev) => ({ ...prev, status: col.id }));
+                      setIsModalOpen(true);
+                    }}
+                    className="p-1 rounded text-text-muted hover:text-text-primary hover:bg-white border border-transparent hover:border-border transition-colors"
+                    title={`Add task to ${col.label}`}
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                  </button>
                 </div>
 
-                {/* Column Cards */}
-                <div className="flex-1 space-y-2.5 overflow-y-auto max-h-[70vh]">
-                  {colTasks.map((task) => (
-                    <Card
-                      key={task.id}
-                      hoverable
-                      onClick={() => openTaskDetails(task.id)}
-                      className="p-3 bg-white border border-border shadow-subtle space-y-2 group"
-                    >
-                      <div className="flex items-start justify-between">
-                        <span className="text-xs font-semibold text-text-primary group-hover:text-primary-600 transition-colors line-clamp-2">
-                          {task.title}
-                        </span>
-                        <div>{getPriorityBadge(task.priority)}</div>
-                      </div>
-
-                      {task.client && (
-                        <div className="text-[10px] text-text-muted flex items-center truncate">
-                          <Building className="w-3 h-3 mr-1 shrink-0" />
-                          <span className="truncate">{task.client.name}</span>
-                        </div>
-                      )}
-
-                      <div className="flex items-center justify-between border-t border-slate-100 pt-2 text-[10px] text-text-secondary">
-                        <span className="flex items-center">
-                          <Calendar className="w-3 h-3 mr-1 text-text-muted" />
-                          {task.dueDate ? formatDate(task.dueDate) : 'No due date'}
-                        </span>
-
-                        <div className="flex items-center space-x-2">
-                          {task._count?.comments > 0 && (
-                            <span className="flex items-center text-text-muted">
-                              <MessageSquare className="w-3 h-3 mr-0.5" />
-                              {task._count.comments}
-                            </span>
-                          )}
-
-                          {task.assignee ? (
-                            <div
-                              className="h-5 w-5 rounded-full bg-primary-100 text-primary-700 font-bold text-[9px] flex items-center justify-center shrink-0"
-                              title={`Assigned to ${task.assignee.firstName}`}
-                            >
-                              {task.assignee.firstName[0]}
-                            </div>
-                          ) : (
-                            <span className="text-text-muted text-[9px]">Unassigned</span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Fast Status Mover */}
-                      <div
-                        className="pt-1.5 flex justify-end"
-                        onClick={(e) => e.stopPropagation()}
+                {/* Column Cards Container */}
+                <div className="flex-1 space-y-2.5 overflow-y-auto max-h-[calc(100vh-270px)] pr-0.5 scrollbar-thin">
+                  {colTasks.length === 0 ? (
+                    /* Helpful Empty State */
+                    <div className="flex flex-col items-center justify-center p-6 rounded-lg border border-dashed border-border/80 bg-white/50 text-center my-1.5">
+                      <p className="text-xs font-medium text-text-muted">
+                        No tasks in {col.label}
+                      </p>
+                      <button
+                        onClick={() => {
+                          setFormData((prev) => ({ ...prev, status: col.id }));
+                          setIsModalOpen(true);
+                        }}
+                        className="mt-2 text-[11px] font-medium text-primary-600 hover:text-primary-700 inline-flex items-center space-x-1"
                       >
-                        <select
-                          value={task.status}
-                          onChange={(e) =>
-                            handleStatusChange(
-                              task.id,
-                              e.target.value as TaskItem['status']
-                            )
-                          }
-                          className="h-5 rounded border border-border bg-white px-1 text-[10px] text-text-secondary focus-visible:outline-none"
+                        <Plus className="w-3 h-3" />
+                        <span>Add task</span>
+                      </button>
+                    </div>
+                  ) : (
+                    colTasks.map((task) => {
+                      const isOverdue =
+                        task.dueDate &&
+                        new Date(task.dueDate) < new Date() &&
+                        task.status !== 'COMPLETED';
+
+                      return (
+                        <div
+                          key={task.id}
+                          onClick={() => openTaskDetails(task.id)}
+                          className="group relative flex flex-col rounded-lg border border-border bg-white p-3.5 shadow-subtle hover:border-primary-300 hover:shadow-card transition-all cursor-pointer text-left h-auto space-y-2"
                         >
-                          <option value="TODO">To Do</option>
-                          <option value="IN_PROGRESS">In Progress</option>
-                          <option value="IN_REVIEW">In Review</option>
-                          <option value="COMPLETED">Completed</option>
-                          <option value="BLOCKED">Blocked</option>
-                        </select>
-                      </div>
-                    </Card>
-                  ))}
+                          {/* 1. Priority badge at the top & quick status mover */}
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center space-x-1.5">
+                              {getPriorityBadge(task.priority)}
+                              {task.status === 'BLOCKED' && (
+                                <span className="inline-flex items-center text-[10px] font-semibold text-danger-600 bg-danger-50 px-1.5 py-0.5 rounded border border-danger-200">
+                                  Blocked
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Fast Status Selector */}
+                            <div
+                              onClick={(e) => e.stopPropagation()}
+                              className="relative shrink-0"
+                            >
+                              <select
+                                value={task.status}
+                                onChange={(e) =>
+                                  handleStatusChange(
+                                    task.id,
+                                    e.target.value as TaskItem['status']
+                                  )
+                                }
+                                className="h-6 rounded border border-border/80 bg-slate-50 hover:bg-slate-100 px-1.5 text-[10px] font-medium text-text-secondary focus:outline-none focus:border-primary-500 cursor-pointer"
+                                title="Change status"
+                              >
+                                <option value="TODO">To Do</option>
+                                <option value="IN_PROGRESS">In Progress</option>
+                                <option value="IN_REVIEW">In Review</option>
+                                <option value="COMPLETED">Completed</option>
+                                <option value="BLOCKED">Blocked</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          {/* 2. Complete Task Title: Full width, wraps naturally across lines */}
+                          <h3
+                            className="text-xs font-semibold text-text-primary group-hover:text-primary-600 transition-colors leading-snug break-words"
+                            title={task.title}
+                          >
+                            {task.title}
+                          </h3>
+
+                          {/* 3. Client name underneath */}
+                          {(task.client || task.campaign) && (
+                            <div className="flex items-center text-[11px] text-text-secondary truncate pt-0.5">
+                              <Building className="w-3 h-3 mr-1 text-text-muted shrink-0" />
+                              <span className="font-medium text-text-secondary truncate">
+                                {task.client?.name || 'Internal'}
+                              </span>
+                              {task.campaign && (
+                                <>
+                                  <span className="mx-1 text-text-muted">•</span>
+                                  <span
+                                    className="text-text-muted truncate max-w-[130px]"
+                                    title={task.campaign.name}
+                                  >
+                                    {task.campaign.name}
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                          )}
+
+                          {/* 4. Due date and assigned user at the bottom */}
+                          <div className="mt-1 pt-2 border-t border-border/60 flex items-center justify-between text-[11px] text-text-secondary">
+                            <span
+                              className={`inline-flex items-center ${
+                                isOverdue
+                                  ? 'text-danger-600 font-medium'
+                                  : 'text-text-muted'
+                              }`}
+                            >
+                              <Calendar
+                                className={`w-3 h-3 mr-1 shrink-0 ${
+                                  isOverdue ? 'text-danger-500' : 'text-text-muted'
+                                }`}
+                              />
+                              {task.dueDate ? formatDate(task.dueDate) : 'No due date'}
+                              {isOverdue && (
+                                <span className="ml-1 text-[9px] font-bold uppercase tracking-wider bg-danger-50 text-danger-700 px-1 py-0.2 rounded">
+                                  Overdue
+                                </span>
+                              )}
+                            </span>
+
+                            <div className="flex items-center space-x-2 shrink-0">
+                              {task._count?.comments > 0 && (
+                                <span
+                                  className="inline-flex items-center text-text-muted text-[11px]"
+                                  title={`${task._count.comments} comments`}
+                                >
+                                  <MessageSquare className="w-3 h-3 mr-0.5" />
+                                  <span className="tabular-nums">
+                                    {task._count.comments}
+                                  </span>
+                                </span>
+                              )}
+
+                              {task.assignee ? (
+                                <div
+                                  className="h-5 w-5 rounded-full bg-primary-50 text-primary-700 font-bold text-[9px] flex items-center justify-center shrink-0 border border-primary-200/60"
+                                  title={`Assigned to ${task.assignee.firstName} ${task.assignee.lastName}`}
+                                >
+                                  {task.assignee.firstName[0]}
+                                </div>
+                              ) : (
+                                <span className="text-text-muted text-[10px] italic">
+                                  Unassigned
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
       ) : (
-        /* List View */
+        /* List View (Table) */
         <Card className="p-0 bg-white border border-border shadow-subtle overflow-hidden">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 border-b border-border text-[10px] font-semibold text-text-muted uppercase">
-              <tr>
-                <th className="px-4 py-3">Task</th>
-                <th className="px-4 py-3">Client / Campaign</th>
-                <th className="px-4 py-3">Priority</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Due Date</th>
-                <th className="px-4 py-3">Assignee</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {tasks.map((task) => (
-                <tr
-                  key={task.id}
-                  onClick={() => openTaskDetails(task.id)}
-                  className="hover:bg-slate-50 cursor-pointer transition-colors"
-                >
-                  <td className="px-4 py-3 font-semibold text-text-primary">
-                    {task.title}
-                  </td>
-                  <td className="px-4 py-3 text-text-secondary">
-                    {task.client?.name || '—'}{' '}
-                    {task.campaign ? `• ${task.campaign.name}` : ''}
-                  </td>
-                  <td className="px-4 py-3">{getPriorityBadge(task.priority)}</td>
-                  <td className="px-4 py-3">
-                    <span className="font-medium text-text-primary">{task.status}</span>
-                  </td>
-                  <td className="px-4 py-3 text-text-secondary tabular-nums">
-                    {task.dueDate ? formatDate(task.dueDate) : '—'}
-                  </td>
-                  <td className="px-4 py-3 text-text-secondary">
-                    {task.assignee
-                      ? `${task.assignee.firstName} ${task.assignee.lastName}`
-                      : 'Unassigned'}
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50 border-b border-border text-[10px] font-semibold text-text-muted uppercase tracking-wider">
+                <tr>
+                  <th className="px-4 py-3 min-w-[240px]">Task Title</th>
+                  <th className="px-4 py-3">Client / Campaign</th>
+                  <th className="px-4 py-3">Priority</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Due Date</th>
+                  <th className="px-4 py-3">Assignee</th>
+                  <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {filteredTasks.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-8 text-center text-text-muted">
+                      No tasks found matching your filters.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredTasks.map((task) => {
+                    const isOverdue =
+                      task.dueDate &&
+                      new Date(task.dueDate) < new Date() &&
+                      task.status !== 'COMPLETED';
+
+                    return (
+                      <tr
+                        key={task.id}
+                        onClick={() => openTaskDetails(task.id)}
+                        className="hover:bg-slate-50/70 cursor-pointer transition-colors"
+                      >
+                        <td className="px-4 py-3 font-semibold text-text-primary">
+                          <p className="leading-snug break-words max-w-md">
+                            {task.title}
+                          </p>
+                        </td>
+
+                        <td className="px-4 py-3 text-text-secondary">
+                          <div className="flex items-center space-x-1">
+                            <span className="font-medium text-text-primary">
+                              {task.client?.name || 'Internal'}
+                            </span>
+                            {task.campaign && (
+                              <span className="text-text-muted">
+                                • {task.campaign.name}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        <td className="px-4 py-3">{getPriorityBadge(task.priority)}</td>
+
+                        <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                          <select
+                            value={task.status}
+                            onChange={(e) =>
+                              handleStatusChange(
+                                task.id,
+                                e.target.value as TaskItem['status']
+                              )
+                            }
+                            className="h-6 rounded border border-border bg-white px-1.5 text-[11px] text-text-primary focus:outline-none focus:border-primary-500 shadow-subtle"
+                          >
+                            <option value="TODO">To Do</option>
+                            <option value="IN_PROGRESS">In Progress</option>
+                            <option value="IN_REVIEW">In Review</option>
+                            <option value="COMPLETED">Completed</option>
+                            <option value="BLOCKED">Blocked</option>
+                          </select>
+                        </td>
+
+                        <td className="px-4 py-3 tabular-nums">
+                          <span
+                            className={
+                              isOverdue ? 'text-danger-600 font-semibold' : 'text-text-secondary'
+                            }
+                          >
+                            {task.dueDate ? formatDate(task.dueDate) : '—'}
+                          </span>
+                        </td>
+
+                        <td className="px-4 py-3 text-text-secondary">
+                          {task.assignee ? (
+                            <div className="flex items-center space-x-1.5">
+                              <span className="h-5 w-5 rounded-full bg-primary-100 text-primary-700 text-[10px] font-bold flex items-center justify-center">
+                                {task.assignee.firstName[0]}
+                              </span>
+                              <span>
+                                {task.assignee.firstName} {task.assignee.lastName}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-text-muted italic">Unassigned</span>
+                          )}
+                        </td>
+
+                        <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                          <Button
+                            size="xs"
+                            variant="outline"
+                            onClick={() => openTaskDetails(task.id)}
+                          >
+                            Details
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
         </Card>
       )}
 
-      {/* Create Task Modal */}
+      {/* 4. Task Details Side Drawer */}
+      <TaskDetailsDrawer
+        task={selectedTask}
+        isOpen={isDrawerOpen}
+        onClose={() => {
+          setIsDrawerOpen(false);
+          setSelectedTask(null);
+        }}
+        onStatusChange={handleStatusChange}
+        onUpdateTask={handleUpdateTask}
+        onDeleteTask={handleDeleteTask}
+        onAddComment={handleAddComment}
+        clients={clients}
+        campaigns={campaigns}
+        members={members}
+      />
+
+      {/* 5. Create Task Modal */}
       <Dialog
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -460,7 +776,7 @@ export const TasksPage: React.FC = () => {
               <select
                 value={formData.clientId}
                 onChange={(e) => setFormData({ ...formData, clientId: e.target.value })}
-                className="flex h-9 w-full rounded-md border border-border bg-white px-3 py-1.5 text-sm text-text-primary shadow-subtle focus-visible:outline-none"
+                className="flex h-9 w-full rounded-md border border-border bg-white px-3 py-1.5 text-xs text-text-primary shadow-subtle focus-visible:outline-none"
               >
                 <option value="">None / Internal</option>
                 {clients.map((c) => (
@@ -480,7 +796,7 @@ export const TasksPage: React.FC = () => {
                 onChange={(e) =>
                   setFormData({ ...formData, campaignId: e.target.value })
                 }
-                className="flex h-9 w-full rounded-md border border-border bg-white px-3 py-1.5 text-sm text-text-primary shadow-subtle focus-visible:outline-none"
+                className="flex h-9 w-full rounded-md border border-border bg-white px-3 py-1.5 text-xs text-text-primary shadow-subtle focus-visible:outline-none"
               >
                 <option value="">None</option>
                 {campaigns.map((camp) => (
@@ -544,13 +860,13 @@ export const TasksPage: React.FC = () => {
               Task Description & Brief
             </label>
             <textarea
-              rows={2}
+              rows={3}
               placeholder="Scope, specifications, asset formats..."
               value={formData.description}
               onChange={(e) =>
                 setFormData({ ...formData, description: e.target.value })
               }
-              className="w-full rounded-md border border-border p-2 text-xs text-text-primary focus-visible:outline-none shadow-subtle"
+              className="w-full rounded-md border border-border p-2.5 text-xs text-text-primary focus-visible:outline-none focus-visible:border-primary-500 shadow-subtle"
             />
           </div>
 
@@ -569,72 +885,6 @@ export const TasksPage: React.FC = () => {
           </div>
         </form>
       </Dialog>
-
-      {/* Task Details & Comments Modal */}
-      {selectedTask && (
-        <Dialog
-          isOpen={Boolean(selectedTask)}
-          onClose={() => setSelectedTask(null)}
-          title={selectedTask.title}
-          description={`Status: ${selectedTask.status} • Priority: ${selectedTask.priority}`}
-          maxWidth="lg"
-        >
-          <div className="space-y-4">
-            <div className="rounded-md border border-border bg-slate-50 p-3 text-xs text-text-primary">
-              <p className="font-semibold text-text-muted mb-1">Description</p>
-              {selectedTask.description || 'No description provided.'}
-            </div>
-
-            {/* Task Comments Section */}
-            <div className="border-t border-border pt-3 space-y-3">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-text-muted flex items-center space-x-1.5">
-                <MessageSquare className="w-3.5 h-3.5" />
-                <span>Discussion & Collaboration</span>
-              </h3>
-
-              <div className="max-h-48 overflow-y-auto space-y-2 divide-y divide-slate-100">
-                {selectedTask.comments?.length === 0 ? (
-                  <p className="text-xs text-text-secondary py-2 text-center">
-                    No comments yet. Start the conversation below.
-                  </p>
-                ) : (
-                  selectedTask.comments?.map((c: any) => (
-                    <div key={c.id} className="pt-2 text-xs">
-                      <div className="flex items-center justify-between text-[11px] mb-0.5">
-                        <span className="font-semibold text-text-primary">
-                          {c.user?.firstName} {c.user?.lastName}
-                        </span>
-                        <span className="text-[10px] text-text-muted tabular-nums">
-                          {formatDate(c.createdAt)}
-                        </span>
-                      </div>
-                      <p className="text-text-secondary">{c.content}</p>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              <form onSubmit={handleAddComment} className="flex items-center space-x-2 pt-2">
-                <input
-                  type="text"
-                  placeholder="Write a comment..."
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  className="flex-1 h-9 rounded-md border border-border px-3 text-xs text-text-primary focus-visible:outline-none focus-visible:border-primary-500 shadow-subtle"
-                />
-                <Button
-                  type="submit"
-                  size="sm"
-                  isLoading={isCommentSubmitting}
-                  rightIcon={<Send className="w-3.5 h-3.5" />}
-                >
-                  Send
-                </Button>
-              </form>
-            </div>
-          </div>
-        </Dialog>
-      )}
     </div>
   );
 };
