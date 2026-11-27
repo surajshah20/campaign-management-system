@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { apiRequest, setActiveAgencyHeader } from '../api/client';
+import { apiRequest, setActiveAgencyHeader, setAuthToken } from '../api/client';
 
 export interface User {
   id: string;
@@ -63,6 +63,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setCurrentAgency(null);
       setAvailableAgencies([]);
       setActiveAgencyHeader(null);
+      setAuthToken(null);
     } finally {
       setIsLoading(false);
     }
@@ -77,11 +78,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       user: User;
       currentAgency: AgencyWorkspace | null;
       availableAgencies: AgencyWorkspace[];
+      token?: string;
     }>('/api/v1/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
 
+    if (data.token) {
+      setAuthToken(data.token);
+    }
     setUser(data.user);
     setCurrentAgency(data.currentAgency);
     setAvailableAgencies(data.availableAgencies || []);
@@ -100,11 +105,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const data = await apiRequest<{
       user: User;
       currentAgency: AgencyWorkspace;
+      token?: string;
     }>('/api/v1/auth/register', {
       method: 'POST',
       body: JSON.stringify(payload),
     });
 
+    if (data.token) {
+      setAuthToken(data.token);
+    }
     setUser(data.user);
     setCurrentAgency(data.currentAgency);
     setAvailableAgencies([data.currentAgency]);
@@ -119,6 +128,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setCurrentAgency(null);
       setAvailableAgencies([]);
       setActiveAgencyHeader(null);
+      setAuthToken(null);
     }
   };
 

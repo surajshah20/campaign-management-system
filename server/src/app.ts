@@ -33,6 +33,7 @@ app.use(
 
 const allowedOrigins = [
   config.corsOrigin,
+  'https://campaign-management-system-silk.vercel.app',
   'http://localhost:5173',
   'http://localhost:5174',
   'http://127.0.0.1:5173',
@@ -42,7 +43,12 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (
+        !origin ||
+        allowedOrigins.includes(origin) ||
+        origin.endsWith('.vercel.app') ||
+        origin.includes('localhost')
+      ) {
         callback(null, true);
       } else {
         callback(null, true); // Permissive in development

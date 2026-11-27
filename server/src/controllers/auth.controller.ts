@@ -33,19 +33,21 @@ export class AuthController {
     try {
       const result = await AuthService.register(req.body);
 
-      // Set secure HTTP-only cookie
+      const isProd = process.env.NODE_ENV === 'production';
+
+      // Set secure HTTP-only cookie (use sameSite: 'none' in production for cross-origin deployments)
       res.cookie('access_token', result.token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        secure: isProd,
+        sameSite: isProd ? 'none' : 'lax',
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       });
 
       if (result.currentAgency) {
         res.cookie('current_agency_id', result.currentAgency.id, {
           httpOnly: false, // readable by client for UI state synchronization
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
+          secure: isProd,
+          sameSite: isProd ? 'none' : 'lax',
           maxAge: 7 * 24 * 60 * 60 * 1000,
         });
       }
@@ -67,18 +69,20 @@ export class AuthController {
     try {
       const result = await AuthService.login(req.body);
 
+      const isProd = process.env.NODE_ENV === 'production';
+
       res.cookie('access_token', result.token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        secure: isProd,
+        sameSite: isProd ? 'none' : 'lax',
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
       if (result.currentAgency) {
         res.cookie('current_agency_id', result.currentAgency.id, {
           httpOnly: false,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
+          secure: isProd,
+          sameSite: isProd ? 'none' : 'lax',
           maxAge: 7 * 24 * 60 * 60 * 1000,
         });
       }
@@ -138,18 +142,20 @@ export class AuthController {
     try {
       const result = await AuthService.acceptInvitation(req.body);
 
+      const isProd = process.env.NODE_ENV === 'production';
+
       res.cookie('access_token', result.token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        secure: isProd,
+        sameSite: isProd ? 'none' : 'lax',
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
       if (result.currentAgency) {
         res.cookie('current_agency_id', result.currentAgency.id, {
           httpOnly: false,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
+          secure: isProd,
+          sameSite: isProd ? 'none' : 'lax',
           maxAge: 7 * 24 * 60 * 60 * 1000,
         });
       }

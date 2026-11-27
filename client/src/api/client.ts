@@ -24,12 +24,26 @@ class ApiError extends Error {
 }
 
 let activeAgencyId: string | null = null;
+let authToken: string | null = typeof window !== 'undefined' ? localStorage.getItem('agency_os_token') : null;
 
 export const setActiveAgencyHeader = (agencyId: string | null) => {
   activeAgencyId = agencyId;
 };
 
 export const getActiveAgencyHeader = () => activeAgencyId;
+
+export const setAuthToken = (token: string | null) => {
+  authToken = token;
+  if (typeof window !== 'undefined') {
+    if (token) {
+      localStorage.setItem('agency_os_token', token);
+    } else {
+      localStorage.removeItem('agency_os_token');
+    }
+  }
+};
+
+export const getAuthToken = () => authToken;
 
 export async function apiRequest<T = any>(
   endpoint: string,
@@ -42,6 +56,10 @@ export async function apiRequest<T = any>(
 
   if (activeAgencyId) {
     headers['x-agency-id'] = activeAgencyId;
+  }
+
+  if (authToken) {
+    headers['Authorization'] = `Bearer ${authToken}`;
   }
 
   const baseUrl = import.meta.env.VITE_API_URL || '';
