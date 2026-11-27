@@ -62,8 +62,8 @@ export async function apiRequest<T = any>(
     headers['Authorization'] = `Bearer ${authToken}`;
   }
 
-  const baseUrl = import.meta.env.VITE_API_URL || '';
-  const url = endpoint.startsWith('http') ? endpoint : `${baseUrl}${endpoint}`;
+  const rawBaseUrl = (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+  const url = endpoint.startsWith('http') ? endpoint : `${rawBaseUrl}${endpoint}`;
 
   const response = await fetch(url, {
     ...options,
