@@ -11,13 +11,18 @@ import {
   Check,
   Command,
   Settings,
+  Menu,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Dialog } from '../ui/Dialog';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 
-export const TopNavigation: React.FC = () => {
+interface TopNavigationProps {
+  onMobileMenuToggle?: () => void;
+}
+
+export const TopNavigation: React.FC<TopNavigationProps> = ({ onMobileMenuToggle }) => {
   const navigate = useNavigate();
   const {
     user,
@@ -86,19 +91,31 @@ export const TopNavigation: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-10 flex h-14 w-full items-center justify-between border-b border-border bg-white px-4 md:px-6">
-      {/* Left: Workspace Selector & Breadcrumb */}
-      <div className="flex items-center space-x-3">
+    <header className="sticky top-0 z-10 flex h-14 w-full items-center justify-between border-b border-border bg-white px-3 sm:px-4 md:px-6">
+      {/* Left: Mobile Hamburger & Workspace Selector */}
+      <div className="flex items-center space-x-1.5 sm:space-x-3">
+        {onMobileMenuToggle && (
+          <button
+            type="button"
+            onClick={onMobileMenuToggle}
+            className="p-1.5 -ml-1 text-text-secondary hover:text-text-primary rounded-md md:hidden hover:bg-slate-100 transition-colors"
+            title="Open navigation menu"
+            aria-label="Toggle navigation menu"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        )}
+
         <div className="relative" ref={workspaceRef}>
           <button
             onClick={() => setWorkspaceMenuOpen(!workspaceMenuOpen)}
-            className="flex items-center space-x-2 rounded-md border border-border bg-white px-2.5 py-1.5 text-xs font-semibold text-text-primary hover:bg-surface-subtle hover:border-slate-300 transition-all shadow-subtle active:scale-[0.98]"
+            className="flex items-center space-x-1.5 sm:space-x-2 rounded-md border border-border bg-white px-2 sm:px-2.5 py-1.5 text-xs font-semibold text-text-primary hover:bg-surface-subtle hover:border-slate-300 transition-all shadow-subtle active:scale-[0.98]"
           >
-            <Building2 className="w-3.5 h-3.5 text-primary-600" />
-            <span className="max-w-[150px] truncate">
+            <Building2 className="w-3.5 h-3.5 text-primary-600 shrink-0" />
+            <span className="max-w-[100px] sm:max-w-[150px] truncate">
               {currentAgency?.name || 'Workspace'}
             </span>
-            <ChevronDown className="w-3 h-3 text-text-muted" />
+            <ChevronDown className="w-3 h-3 text-text-muted shrink-0" />
           </button>
 
           {workspaceMenuOpen && (
@@ -164,7 +181,15 @@ export const TopNavigation: React.FC = () => {
       </div>
 
       {/* Right: Quick Actions & Profile */}
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center space-x-1 sm:space-x-2">
+        <button
+          onClick={() => setSearchModalOpen(true)}
+          className="md:hidden rounded-md p-1.5 text-text-secondary hover:bg-surface-subtle hover:text-text-primary transition-colors"
+          title="Search (⌘K)"
+        >
+          <Search className="w-4 h-4" />
+        </button>
+
         <button
           onClick={() => navigate('/settings')}
           className="rounded-md p-1.5 text-text-secondary hover:bg-surface-subtle hover:text-text-primary transition-colors"

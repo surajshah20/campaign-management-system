@@ -215,7 +215,7 @@ export const CampaignsPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           {/* Status Filter */}
-          <div className="flex items-center space-x-1 border border-border bg-white rounded-md p-1 shadow-subtle">
+          <div className="flex items-center space-x-1 border border-border bg-white rounded-md p-1 shadow-subtle overflow-x-auto max-w-full scrollbar-thin">
             {['ALL', 'ACTIVE', 'PLANNING', 'PAUSED', 'COMPLETED'].map((st) => (
               <button
                 key={st}

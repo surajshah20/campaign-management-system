@@ -176,7 +176,7 @@ export const ClientsPage: React.FC = () => {
       {/* Filter & Search Bar */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
         {/* Status Filter Tabs */}
-        <div className="flex items-center space-x-1 border border-border bg-white rounded-md p-1 shadow-subtle w-full sm:w-auto">
+        <div className="flex items-center space-x-1 border border-border bg-white rounded-md p-1 shadow-subtle w-full sm:w-auto overflow-x-auto max-w-full scrollbar-thin">
           {['ALL', 'ACTIVE', 'ONBOARDING', 'PAUSED'].map((status) => (
             <button
               key={status}

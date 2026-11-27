@@ -269,8 +269,8 @@ export const OverviewPage: React.FC = () => {
       {/* Main Charts & Operational Health Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Financial Distribution Chart */}
-        <Card className="p-5 lg:col-span-2 bg-white border border-border shadow-subtle">
-          <div className="flex items-center justify-between mb-4 pb-3 border-b border-border">
+        <Card className="p-4 sm:p-5 lg:col-span-2 bg-white border border-border shadow-subtle min-w-0 overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 pb-3 border-b border-border">
             <div>
               <h2 className="text-sm font-semibold text-text-primary">
                 Campaign Budget vs. Actual Spend
@@ -284,18 +284,19 @@ export const OverviewPage: React.FC = () => {
             </Badge>
           </div>
 
-          <div className="h-64 w-full">
+          <div className="h-64 w-full min-w-0">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={financialData}
-                margin={{ top: 10, right: 10, left: 10, bottom: 20 }}
+                margin={{ top: 10, right: 10, left: -10, bottom: 20 }}
               >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E4E7EC" />
                 <XAxis
                   dataKey="name"
-                  tick={{ fontSize: 11, fill: '#667085' }}
+                  tick={{ fontSize: 10, fill: '#667085' }}
                   tickLine={false}
                   axisLine={{ stroke: '#E4E7EC' }}
+                  interval={0}
                 />
                 <YAxis
                   tick={{ fontSize: 10, fill: '#667085' }}
@@ -487,7 +488,7 @@ export const OverviewPage: React.FC = () => {
                 <div
                   key={camp.id}
                   onClick={() => navigate(`/campaigns/${camp.id}`)}
-                  className="flex items-start justify-between rounded-md border border-border p-3 hover:bg-surface-subtle hover:border-slate-300 transition-all cursor-pointer"
+                  className="flex flex-col sm:flex-row sm:items-start justify-between gap-2.5 rounded-md border border-border p-3 hover:bg-surface-subtle hover:border-slate-300 transition-all cursor-pointer"
                 >
                   <div className="space-y-1">
                     <div className="flex items-center space-x-2">
@@ -506,7 +507,7 @@ export const OverviewPage: React.FC = () => {
                       {camp.objective || 'Omnichannel awareness & performance'}
                     </p>
                   </div>
-                  <div className="text-right shrink-0 pl-3">
+                  <div className="text-left sm:text-right shrink-0 pt-1 sm:pt-0 border-t sm:border-t-0 border-border/50">
                     <span className="text-xs font-bold text-text-primary tabular-nums block">
                       {formatCurrency(camp.allocatedBudget, currency)}
                     </span>
